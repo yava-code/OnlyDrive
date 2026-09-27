@@ -114,6 +114,18 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusMethodNotAllowed, actionErr{Error: "method not allowed for this endpoint"})
 		return
 	}
+	// embedded logo (served from the binary, no external assets)
+	if r.URL.Path == "/logo.png" {
+		data, err := assets.ReadFile("assets/logo.png")
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "image/png")
+		w.Header().Set("Cache-Control", "no-store")
+		_, _ = w.Write(data)
+		return
+	}
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
 		return

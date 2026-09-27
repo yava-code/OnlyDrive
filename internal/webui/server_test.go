@@ -2,6 +2,7 @@ package webui
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -56,10 +57,12 @@ func TestIndexPageServed(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("index: got HTTP %d", resp.StatusCode)
 	}
-	body := make([]byte, 4096)
-	n, _ := resp.Body.Read(body)
-	page := string(body[:n])
-	for _, want := range []string{"gd control panel", "Add Google account", "btn-doctor"} {
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	page := string(body)
+	for _, want := range []string{"gd control panel", "Add Google account", "btn-doctor", "logo.png"} {
 		if !strings.Contains(page, want) {
 			t.Fatalf("index page missing %q", want)
 		}
@@ -77,6 +80,31 @@ func TestIndexNotFoundPath(t *testing.T) {
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusNotFound {
 		t.Fatalf("expected 404 for unknown path, got %d", resp.StatusCode)
+	}
+}
+
+func TestLogoEmbedded(t *testing.T) {
+	s := testServer(t, "")
+	srv := httptest.NewServer(s.Handler())
+	defer srv.Close()
+	resp, err := http.Get(srv.URL + "/logo.png")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("logo: got HTTP %d", resp.StatusCode)
+	}
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(data) < 1000 {
+		t.Fatalf("logo suspiciously small: %d bytes", len(data))
+	}
+	// PNG magic
+	if data[0] != 0x89 || data[1] != 'P' {
+		t.Fatal("logo is not a PNG")
 	}
 }
 
