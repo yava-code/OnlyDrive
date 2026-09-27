@@ -57,7 +57,7 @@
   .spacer { flex: 1; }
   .pill {
     display: inline-flex; align-items: center; gap: 8px;
-    border-radius: 999px; padding: 9px 18px;
+    border-radius: 999px; padding: 9px 18px; min-height: 44px;
     font-size: 12px; letter-spacing: .04em; cursor: pointer;
     border: 1px solid var(--off-black); background: transparent; color: var(--off-black);
     transition: background .15s, transform .15s, border-color .15s;
@@ -97,6 +97,7 @@
   .copyline code { flex: 1; text-align: left; font-size: 13px; color: var(--off-black); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .copyline .dollar { color: var(--lake); }
   .copyline button {
+    min-height: 44px;
     border: 0; border-radius: 999px; padding: 8px 16px; cursor: pointer;
     background: var(--periwinkle); color: var(--off-black); font: 500 11px "JetBrains Mono", monospace;
     letter-spacing: .08em; text-transform: uppercase;
@@ -166,7 +167,7 @@
 
   /* faq */
   details { border-bottom: 1px solid var(--ash); padding: 18px 0; }
-  details summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 16px; align-items: center; font-family: Newsreader, serif; font-size: 21px; color: var(--off-black); }
+  details summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 16px; align-items: center; font-family: Newsreader, serif; font-size: 21px; color: var(--off-black); min-height: 44px; }
   details summary::-webkit-details-marker { display: none; }
   details summary::after { content: "+"; font-family: "JetBrains Mono", monospace; font-size: 20px; color: var(--smoke); transition: transform .15s; }
   details[open] summary::after { transform: rotate(45deg); }
@@ -189,6 +190,7 @@
   .cta .pill.dark:hover { background: #fff; }
   .cta .pill.primary:hover { background: var(--lake); }
 
+  footer a { display: inline-block; padding: 13px 0; }
   footer { border-top: 1px solid var(--ash); margin-top: 72px; padding: 36px 0 44px; color: var(--smoke); font-size: 12px; }
   footer .fbar { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; }
   footer .led { width: 8px; height: 8px; border-radius: 50%; background: var(--mint); display: inline-block; margin-right: 8px; }
@@ -197,6 +199,13 @@
     nav { display: none; }
     section { padding: 52px 0; }
     .hero { padding: 64px 0 48px; }
+  }
+  @media (max-width: 640px) {
+    .bar { padding: 0 16px; gap: 10px; }
+    .logo { height: 22px; }
+    .brand { font-size: 17px; }
+    .bar > .pill:not(.primary) { display: none; }
+    .copyline { border-radius: 18px; padding: 8px 12px 8px 16px; }
   }
   @media (prefers-reduced-motion: reduce) {
     * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
@@ -209,7 +218,6 @@
 <header>
   <div class="bar">
     <img class="logo" src="img/logo.png" alt="OnlyDrive logo">
-    <span class="brand">OnlyDrive</span>
     <nav aria-label="Sections">
       <a href="#proof">Proof</a>
       <a href="#features">Features</a>
