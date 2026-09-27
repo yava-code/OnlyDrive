@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # gd installer (macOS / Linux) — one line:
-#   curl -fsSL https://raw.githubusercontent.com/buffcode/gd/main/install/macos.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/yava-code/OnlyDrive/main/install/macos.sh | bash
 # Env overrides: GD_REPO=user/repo  GD_VERSION=v0.1.0
 set -euo pipefail
 
-REPO="${GD_REPO:-buffcode/gd}"
+REPO="${GD_REPO:-yava-code/OnlyDrive}"
 VER="${GD_VERSION:-latest}"
 BASE="https://github.com/$REPO/releases"
 API="https://api.github.com/repos/$REPO"

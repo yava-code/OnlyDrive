@@ -1,9 +1,9 @@
 # gd installer (Windows) — one line:
-#   irm https://raw.githubusercontent.com/buffcode/gd/main/install/install.ps1 | iex
+#   irm https://raw.githubusercontent.com/yava-code/OnlyDrive/main/install/install.ps1 | iex
 # Env overrides: GD_REPO=user/repo  GD_VERSION=v0.1.0
 $ErrorActionPreference = 'Stop'
 
-$repo = if ($env:GD_REPO) { $env:GD_REPO } else { 'buffcode/gd' }
+$repo = if ($env:GD_REPO) { $env:GD_REPO } else { 'yava-code/OnlyDrive' }
 $ver  = if ($env:GD_VERSION) { $env:GD_VERSION } else { 'latest' }
 $base = "https://github.com/$repo/releases"
 $hdr  = @{ 'User-Agent' = 'gd-installer'; 'Accept' = 'application/vnd.github+json' }

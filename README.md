@@ -13,11 +13,11 @@ You never see or configure rclone.
 ## Install: one command, then the wizard walks you through
 
 ```powershell
-irm https://raw.githubusercontent.com/buffcode/gd/main/install/install.ps1 | iex
+irm https://raw.githubusercontent.com/yava-code/OnlyDrive/main/install/install.ps1 | iex
 ```
 macOS/Linux:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/buffcode/gd/main/install/macos.sh | bash
+curl -fsSL https://raw.githubusercontent.com/yava-code/OnlyDrive/main/install/macos.sh | bash
 ```
 
 The installer downloads the exe, adds it to PATH and starts the **wizard**:
