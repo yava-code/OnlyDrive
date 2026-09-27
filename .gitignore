@@ -1,0 +1,7 @@
+# built binaries
+gd.exe
+gd-ui.exe
+*.test
+
+# runtime data and scratch
+.freebuff/
