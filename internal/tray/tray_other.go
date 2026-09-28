@@ -20,3 +20,6 @@ func Run(cb Callbacks) error {
 
 // Stop is a no-op without a tray.
 func Stop() {}
+
+// RefreshStatus is a no-op without a tray.
+func RefreshStatus() {}

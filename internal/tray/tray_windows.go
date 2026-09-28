@@ -14,10 +14,11 @@ import (
 )
 
 const (
-	wmApp          = 0x8000
-	wmTrayCallback = wmApp + 1
-	wmClose        = 0x0010
-	wmDestroy      = 0x0002
+	wmApp            = 0x8000
+	wmTrayCallback   = wmApp + 1
+	wmClose          = 0x0010
+	wmDestroy        = 0x0002
+	wmAppTrayRefresh = wmApp + 2
 
 	nimAdd    = 0
 	nimModify = 1
@@ -97,7 +98,7 @@ var (
 	procGetSystemMetrics    = user32.NewProc("GetSystemMetrics")
 
 	procShellNotifyIconW = shell32.NewProc("Shell_NotifyIconW")
-	procExtractIconW    = shell32.NewProc("ExtractIconW")
+	procExtractIconW     = shell32.NewProc("ExtractIconW")
 
 	procGetModuleHandleW = kernel32.NewProc("GetModuleHandleW")
 )
@@ -249,6 +250,16 @@ func (t *Tray) setTip() {
 	procShellNotifyIconW.Call(nimModify, uintptr(unsafe.Pointer(&t.nid)))
 }
 
+// RefreshStatus re-renders the tooltip from the Status callback. Safe to
+// call from any goroutine: the work is posted to the tray window so the
+// Shell_NotifyIconW call happens on the message-loop thread.
+func RefreshStatus() {
+	if current == nil || current.hwnd == 0 {
+		return
+	}
+	procPostMessageW.Call(current.hwnd, wmAppTrayRefresh, 0, 0)
+}
+
 func setTipBuf(dst *[128]uint16, s string) {
 	u, err := syscall.UTF16FromString(s)
 	if err != nil {
@@ -266,6 +277,9 @@ func wndProc(hwnd, message, wParam, lParam uintptr) uintptr {
 		switch message {
 		case wmTrayCallback:
 			t.onTray(lParam)
+			return 0
+		case wmAppTrayRefresh:
+			t.setTip()
 			return 0
 		case wmClose:
 			procDestroyWindow.Call(hwnd)

@@ -206,6 +206,7 @@ func runPanel(port int) {
 		}
 		openBrowser(url)
 	}()
+	go tipTicker()
 
 	go func() {
 		sig := make(chan os.Signal, 1)
@@ -263,9 +264,20 @@ func runTray() {
 		defer cancel()
 		_ = srv.Shutdown(ctx)
 	}
+	go tipTicker()
 	if err := tray.Run(cb); err != nil {
 		fmt.Fprintln(os.Stderr, "tray:", err)
 		os.Exit(1)
+	}
+}
+
+// tipTicker keeps the tray tooltip honest: mounted disks and pooled usage
+// change outside our control (mounts from the CLI, files landing in Drive).
+func tipTicker() {
+	tick := time.NewTicker(5 * time.Second)
+	defer tick.Stop()
+	for range tick.C {
+		tray.RefreshStatus()
 	}
 }
 
