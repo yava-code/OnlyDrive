@@ -225,3 +225,10 @@ lets you disable an entry without deleting it.
 go test ./...
 GD_LIVE=1 go test ./internal/rclone/ -run TestLiveRCProbe   :: live rclone rcd
 ```
+
+## License
+
+Apache-2.0. The full text lives in [LICENSE](LICENSE). Third-party pieces
+keep their own licenses: rclone (Apache-2.0, downloaded and managed by gd,
+never bundled), WinFsp (GPLv3 with an FLOSS exception, installed separately
+by the setup wizard) and the Go modules in `go.mod`.
