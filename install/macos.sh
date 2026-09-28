@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# gd installer (macOS / Linux) — one line:
+# gd installer (macOS / Linux), one line:
 #   curl -fsSL https://raw.githubusercontent.com/yava-code/OnlyDrive/main/install/macos.sh | bash
-# Env overrides: GD_REPO=user/repo  GD_VERSION=v0.1.0
+# Env overrides: GD_REPO=user/repo  GD_VERSION=v0.1.1
 set -euo pipefail
 
 REPO="${GD_REPO:-yava-code/OnlyDrive}"
@@ -13,7 +13,7 @@ fail() {
   echo
   echo "ERROR: $1" >&2
   echo
-  echo "Fallback — build from source (needs Go 1.22+):" >&2
+  echo "Fallback: build from source (needs Go 1.22+):" >&2
   echo "  git clone https://github.com/$REPO.git && cd gd && go build -o /usr/local/bin/gd ./cmd/gd" >&2
   exit 1
 }

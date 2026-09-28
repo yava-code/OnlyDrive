@@ -87,8 +87,11 @@ root (`Docs/2024/report.txt`).
 `gd autostart on` tries schtasks first. If schtasks fails (common: a
 network-path error), gd writes the per-user Run key
 `HKCU\...\CurrentVersion\Run\gd` and reports the method. `gd autostart off`
-removes both. The Run entry runs `"<exe>" boot`, which starts the daemon and
-re-mounts registered disks, then exits.
+removes both. The Run entry (visible in Task Manager → Startup apps) runs
+`"<gd-ui.exe>" tray` when gd-ui sits next to gd: it starts the daemon,
+re-mounts registered disks and stays resident as a tray icon with
+Pause disks / Resume disks / Quit. Without gd-ui it runs `"<exe>" boot`,
+which starts the daemon and re-mounts registered disks, then exits.
 
 ## Limitations
 

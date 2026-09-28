@@ -31,14 +31,14 @@ func cmdAdd() error {
 		return err
 	}
 	if !m.Installed() {
-		return fmt.Errorf("rclone not installed yet — run: gd setup")
+		return fmt.Errorf("rclone not installed yet, run: gd setup")
 	}
 	cfg, err := config.Load()
 	if err != nil {
 		return err
 	}
 	fmt.Println("A browser window will open for Google sign-in…")
-	fmt.Println("(uses rclone's built-in OAuth app — no API keys, no Google Cloud)")
+	fmt.Println("(uses rclone's built-in OAuth app, no API keys, no Google Cloud)")
 	authCtx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 	tokenJSON, err := m.AuthorizeDrive(authCtx)
@@ -53,7 +53,7 @@ func cmdAdd() error {
 	if err := cfg.Save(); err != nil {
 		return err
 	}
-	// The token blob has no email — ask Google who we are (best effort).
+	// The token blob has no email, ask Google who we are (best effort).
 	if email == "" {
 		if real, err := resolveEmail(m, tokenJSON); err == nil && real != "" {
 			acc.Email = real
@@ -92,7 +92,7 @@ func cmdAccounts() error {
 		return err
 	}
 	if len(cfg.Accounts) == 0 {
-		fmt.Println("no accounts yet — run: gd add")
+		fmt.Println("no accounts yet, run: gd add")
 		return nil
 	}
 	for _, a := range cfg.Accounts {
@@ -479,7 +479,7 @@ func cmdStatus() error {
 		fmt.Println(line)
 	}
 	if len(cfg.Accounts) == 0 {
-		fmt.Println("  (no accounts — run: gd add)")
+		fmt.Println("  (no accounts, run: gd add)")
 	}
 	if running, _, _, addr := serve.S3Status(); running {
 		fmt.Println("serve s3:", addr)
@@ -570,7 +570,7 @@ func cmdMCP(rest []string) error {
 		if err := mcpinstall.Install(c); err != nil {
 			return err
 		}
-		fmt.Printf("gd MCP server registered in %s — restart the app to see tools.\n", c.Name)
+		fmt.Printf("gd MCP server registered in %s, restart the app to see tools.\n", c.Name)
 		cfg, err := config.Load()
 		if err == nil {
 			cfg.MCPClient = c.Key
@@ -699,7 +699,7 @@ func (e *exitError) Error() string { return fmt.Sprintf("exit status %d", e.code
 
 func pickAccount(cfg *config.Config, name string) (*config.Account, error) {
 	if len(cfg.Accounts) == 0 {
-		return nil, fmt.Errorf("no accounts — run: gd add")
+		return nil, fmt.Errorf("no accounts, run: gd add")
 	}
 	if name == "" {
 		return &cfg.Accounts[0], nil

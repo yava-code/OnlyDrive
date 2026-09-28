@@ -8,9 +8,9 @@ import (
 // Prompt returns the full agent-facing install & usage prompt.
 func Prompt() string {
 	var b strings.Builder
-	b.WriteString(`# gd — Google Drive as a local disk + MCP (instructions for an LLM agent)
+	b.WriteString(`# gd, Google Drive as a local disk + MCP (instructions for an LLM agent)
 
-You help the user install and use **gd** — a tool that turns Google Drive
+You help the user install and use **gd**, a tool that turns Google Drive
 (personal subscription, no Google Cloud) into a local disk and provides an
 MCP server for file operations.
 
@@ -29,15 +29,15 @@ gd mount acc1     :: mounts the account as a disk (letter picked automatically)
 gd mcp install claude-desktop   :: or cursor / claude-code / windsurf / vscode
 ` + "```" + `
 
-3. Verify: ` + "`gd doctor`" + ` — every check should pass. ` + "`gd status`" + ` — mounts and daemon.
-   ` + "`gd ui`" + ` — browser control panel for humans.
+3. Verify: ` + "`gd doctor`" + `, every check should pass. ` + "`gd status`" + `, mounts and daemon.
+   ` + "`gd ui`" + `, browser control panel for humans.
 
 ## MCP
 
 gd is itself an MCP server (stdio): ` + "`gd mcp`" + `.
 Tools: gd_accounts, gd_ls, gd_read, gd_write, gd_mkdir, gd_move, gd_copy,
 gd_delete, gd_search, gd_quota, gd_share, gd_mount_status.
-An agent working through MCP does NOT need to run mount — all operations go
+An agent working through MCP does NOT need to run mount, all operations go
 through the daemon API. Mount is only needed to see the disk in Explorer.
 
 ## Typical agent tasks
@@ -50,7 +50,7 @@ through the daemon API. Mount is only needed to see the disk in Explorer.
 
 ## Important
 
-- Do not keep live databases (SQLite) on the mounted disk — Drive is not a
+- Do not keep live databases (SQLite) on the mounted disk, Drive is not a
   block device.
 - Google upload limit: ~750 GB/day per account.
 - Configs: ~/.gd/gd.json (state), ~/.gd/rclone.conf (OAuth tokens; never

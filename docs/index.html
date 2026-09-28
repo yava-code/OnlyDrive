@@ -194,6 +194,14 @@
   footer { border-top: 1px solid var(--ash); margin-top: 72px; padding: 36px 0 44px; color: var(--smoke); font-size: 12px; }
   footer .fbar { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; }
   footer .led { width: 8px; height: 8px; border-radius: 50%; background: var(--mint); display: inline-block; margin-right: 8px; }
+  footer .fbrand { display: inline-flex; align-items: center; }
+  footer .flogo { height: 22px; width: auto; vertical-align: middle; }
+  footer .fmeta { margin-left: 10px; }
+
+  @media (max-width: 640px) {
+    footer .fmeta { margin-left: 6px; }
+    footer .flogo { height: 18px; }
+  }
 
   @media (max-width: 860px) {
     nav { display: none; }
@@ -227,7 +235,7 @@
     </nav>
     <span class="spacer"></span>
     <a class="pill" href="https://github.com/yava-code/OnlyDrive">GitHub</a>
-    <a class="pill primary" href="#install">Get started</a>
+    <a class="pill primary" href="#install">Install</a>
   </div>
 </header>
 
@@ -235,7 +243,7 @@
   <section class="hero">
     <div class="wash" aria-hidden="true"></div>
     <div class="wrap">
-      <span class="tag"><span class="dot" aria-hidden="true"></span> v0.1.0 released · single Go binary</span>
+      <a class="tag" href="https://github.com/yava-code/OnlyDrive/releases/latest/download/gd-windows-amd64.exe"><span class="dot" aria-hidden="true"></span> v0.1.1 released · single Go binary</a>
       <h1>Every Google account, one honest pool of disks.</h1>
       <p>OnlyDrive mounts each Google account as a real Windows drive, folds them into one storage pool, exposes an S3-compatible endpoint on localhost, and gives AI agents file tools over MCP. Your regular Google subscription: no Google Cloud project, no API keys.</p>
       <div class="ctas">
@@ -349,25 +357,25 @@
         <div style="height:14px"></div>
         <div class="poolrow">
           <span class="name">acc1</span>
-          <span class="mail">yasenvarf@gmail.com · Z:</span>
+          <span class="mail">you***@gmail.com · Z:</span>
           <div class="track"><div class="fill a" style="width:2%"></div></div>
           <span class="drive">0.1 / 5.00 TB</span>
         </div>
         <div class="poolrow">
           <span class="name">acc2</span>
-          <span class="mail">goosetrol@gmail.com · Y:</span>
+          <span class="mail">other***@gmail.com · Y:</span>
           <div class="track"><div class="fill b" style="width:6%"></div></div>
           <span class="drive">17.7 GB / 5.00 TB</span>
         </div>
         <div class="poolrow">
           <span class="name">acc3</span>
-          <span class="mail">murderinerd@gmail.com · X:</span>
+          <span class="mail">third***@gmail.com · X:</span>
           <div class="track"><div class="fill c" style="width:3%"></div></div>
           <span class="drive">7.8 GB / 5.00 TB</span>
         </div>
         <div class="poolrow">
           <span class="name">acc4</span>
-          <span class="mail">soher3000doter@gmail.com · W:</span>
+          <span class="mail">fourth***@gmail.com · W:</span>
           <div class="track"><div class="fill d" style="width:2%"></div></div>
           <span class="drive">6.3 GB / 5.00 TB</span>
         </div>
@@ -377,7 +385,7 @@
 
   <section id="install">
     <div class="wrap">
-      <div class="kicker">Get started</div>
+      <div class="kicker">Install</div>
       <h2>Three commands to disks.</h2>
       <div class="grid">
         <div class="card">
@@ -444,7 +452,8 @@ gd doctor         :: is everything ok?</pre>
           <p>Free, open source, Apache-2.0. Windows builds today; macOS and Linux builds ship in the release, mounting there is the next milestone.</p>
         </div>
         <div class="act">
-          <a class="pill primary" href="https://github.com/yava-code/OnlyDrive/releases/tag/v0.1.0">Download v0.1.0</a>
+          <a class="pill primary" href="https://github.com/yava-code/OnlyDrive/releases/latest/download/gd-windows-amd64.exe">Download for Windows</a>
+          <a class="pill" href="https://github.com/yava-code/OnlyDrive/releases/latest/download/gd-ui-windows-amd64.exe">Download gd-ui</a>
           <a class="pill dark" href="https://github.com/yava-code/OnlyDrive">View source</a>
         </div>
       </div>
@@ -454,7 +463,7 @@ gd doctor         :: is everything ok?</pre>
 
 <footer>
   <div class="wrap fbar">
-    <span><span class="led" aria-hidden="true"></span>OnlyDrive / gd v0.1.0 · Apache-2.0</span>
+    <span class="fbrand"><span class="led" aria-hidden="true"></span><img class="flogo" src="img/logo.png" alt="OnlyDrive"> <span class="fmeta">Apache-2.0 · v0.1.1</span></span>
     <span>daemon on 127.0.0.1:5572 · panel on 127.0.0.1:5590 · S3 on 127.0.0.1:9000</span>
     <a href="https://github.com/yava-code/OnlyDrive">github.com/yava-code/OnlyDrive</a>
   </div>

@@ -20,7 +20,7 @@ import (
 	"gd/internal/winfsp"
 )
 
-const usage = `gd — Google Drive as a local disk + MCP server (your Google subscription, no Google Cloud keys).
+const usage = `gd, Google Drive as a local disk + MCP server (your Google subscription, no Google Cloud keys).
 
 Run ` + "`gd`" + ` with no arguments for the guided setup wizard.
 
@@ -41,7 +41,7 @@ Usage:
   gd quota [acc]               storage usage for an account
   gd share <path> [acc]        create a public link for a file
   gd reauth <acc>              refresh OAuth for an account
-  gd mcp                       run MCP server (stdio) — for AI agents
+  gd mcp                       run MCP server (stdio), for AI agents
   gd mcp install <client>      register MCP in claude-desktop|claude-code|cursor|windsurf|vscode
   gd mcp prompt [file]         write AGENTS.md-style instructions for LLM agents
   gd doctor [--fix]            diagnose environment (and auto-fix missing parts)
@@ -150,7 +150,7 @@ func askYN(prompt string, def bool) bool {
 
 func cmdWizard() error {
 	fmt.Println("╔══════════════════════════════════════════════════════╗")
-	fmt.Println("║   gd — Google Drive as a disk + MCP (setup wizard)   ║")
+	fmt.Println("║   gd, Google Drive as a disk + MCP (setup wizard)   ║")
 	fmt.Println("╚══════════════════════════════════════════════════════╝")
 	fmt.Println()
 	fmt.Println("We will: install the engine, connect Google, mount your disks, wire up MCP.")
@@ -166,7 +166,7 @@ func cmdWizard() error {
 		}
 	}
 	if engineOK {
-		fmt.Println("[1/4] Engine (rclone) already installed — skipping.")
+		fmt.Println("[1/4] Engine (rclone) already installed, skipping.")
 	} else {
 		fmt.Println("[1/4] Installing the engine (rclone + WinFsp)…")
 		if err := cmdSetup(); err != nil {
@@ -181,11 +181,11 @@ func cmdWizard() error {
 		return err
 	}
 	if len(cfg.Accounts) > 0 {
-		fmt.Printf("[2/4] Google account already connected: %s — skipping.\n", cfg.Accounts[0].Email)
+		fmt.Printf("[2/4] Google account already connected: %s, skipping.\n", cfg.Accounts[0].Email)
 		fmt.Println("      (add more anytime with: gd add)")
 	} else {
 		fmt.Println("[2/4] Connect your Google account(s).")
-		fmt.Println("      A browser window will open — sign in and click Allow.")
+		fmt.Println("      A browser window will open, sign in and click Allow.")
 		nStr := ask("      How many Google accounts to connect?", "1")
 		n, convErr := strconv.Atoi(nStr)
 		if convErr != nil || n < 1 {
@@ -195,11 +195,11 @@ func cmdWizard() error {
 			n = 10 // sanity cap; more can be added later via `gd add`
 		}
 		if !askYN("      Continue?", true) {
-			fmt.Println("      OK — run `gd add` later.")
+			fmt.Println("      OK, run `gd add` later.")
 		} else {
 			for i := 1; i <= n; i++ {
 				if n > 1 {
-					fmt.Printf("\n      — account %d of %d —\n", i, n)
+					fmt.Printf("\n     · account %d of %d ·\n", i, n)
 				}
 				if err := cmdAdd(); err != nil {
 					return err
@@ -224,7 +224,7 @@ func cmdWizard() error {
 		}
 	}
 	if len(cfg.Mounts) == 0 {
-		fmt.Println("      No disks mounted (usually missing WinFsp — see `gd doctor`).")
+		fmt.Println("      No disks mounted (usually missing WinFsp, see `gd doctor`).")
 	}
 	fmt.Println()
 
@@ -256,10 +256,10 @@ func cmdWizard() error {
 	}
 	fmt.Println()
 	fmt.Println("Useful next:")
-	fmt.Println("  gd serve s3    — S3-compatible endpoint for your projects")
-	fmt.Println("  gd mcp prompt  — ready-made prompt for any LLM agent")
-	fmt.Println("  gd ui          — browser control panel")
-	fmt.Println("  gd status      — what is currently connected")
+	fmt.Println("  gd serve s3   , S3-compatible endpoint for your projects")
+	fmt.Println("  gd mcp prompt , ready-made prompt for any LLM agent")
+	fmt.Println("  gd ui         , browser control panel")
+	fmt.Println("  gd status     , what is currently connected")
 	return nil
 }
 
@@ -269,7 +269,7 @@ func cmdSetup() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
-	fmt.Println("gd setup — making your Google Drive a real disk")
+	fmt.Println("gd setup, making your Google Drive a real disk")
 	fmt.Println()
 
 	// 1. rclone
@@ -280,7 +280,7 @@ func cmdSetup() error {
 	}
 	if m.Installed() {
 		if v, err := m.VersionOut(); err == nil {
-			fmt.Println("already installed —", firstLine(v))
+			fmt.Println("already installed:", firstLine(v))
 		} else {
 			fmt.Println("present but broken, re-downloading…")
 			if err := m.Download(ctx); err != nil {
@@ -330,9 +330,9 @@ func cmdSetup() error {
 	fmt.Println("[4/4] done.")
 	fmt.Println()
 	fmt.Println("Next steps:")
-	fmt.Println("  gd add            — connect your Google account (browser will open)")
-	fmt.Println("  gd daemon start   — start background service")
-	fmt.Println("  gd mount          — mount as a disk")
-	fmt.Println("  gd mcp install claude-desktop — connect to AI agents")
+	fmt.Println("  gd add           , connect your Google account (browser will open)")
+	fmt.Println("  gd daemon start  , start background service")
+	fmt.Println("  gd mount         , mount as a disk")
+	fmt.Println("  gd mcp install claude-desktop, connect to AI agents")
 	return nil
 }

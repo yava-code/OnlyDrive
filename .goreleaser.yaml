@@ -25,23 +25,18 @@ builds:
       - goos: linux
         goarch: arm64
 
-# Ship raw binaries named after the build id; windows gets the .exe suffix.
-# One archive group per build id, ids matched by build id, so names never
-# collide (the earlier duplicate-name failure came from both groups emitting
-# the same template without a build id filter).
+# Ship raw binaries named after the build id. In binary mode goreleaser
+# appends .exe for windows itself; putting .exe in name_template doubles it
+# (that is how v0.1.0 shipped gd-windows-amd64.exe.exe).
 archives:
   - id: gd
     builds: [gd]
     formats: [binary]
-    name_template: >-
-      {{- .ProjectName -}}-{{ .Os }}-{{ .Arch }}
-      {{- if and (eq .Os "windows") (eq .Arch "amd64") }}.exe{{ end -}}
+    name_template: "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}"
   - id: gd-ui
     builds: [gd-ui]
     formats: [binary]
-    name_template: >-
-      {{- .ProjectName -}}-ui-{{ .Os }}-{{ .Arch }}
-      {{- if and (eq .Os "windows") (eq .Arch "amd64") }}.exe{{ end -}}
+    name_template: "{{ .ProjectName }}-ui-{{ .Os }}-{{ .Arch }}"
 
 checksum:
   name_template: 'checksums.txt'

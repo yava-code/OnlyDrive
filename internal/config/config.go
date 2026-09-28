@@ -12,7 +12,7 @@ import (
 )
 
 // Version is the current gd release.
-const Version = "0.1.0"
+const Version = "0.1.1"
 
 // PinnedRcloneVersion is the rclone version gd downloads and manages.
 const PinnedRcloneVersion = "1.75.1"

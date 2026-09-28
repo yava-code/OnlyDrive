@@ -247,33 +247,56 @@ const taskName = "gd-autostart"
 // runValueName is the HKCU Run registry value used as autostart fallback.
 const runValueName = "gd"
 
+// autostartTarget picks what logon autostart launches. A gd-ui binary next
+// to this exe wins: tray mode does the same daemon+mount work and then stays
+// resident, giving the user a visible pause/quit control. Without gd-ui the
+// autostart falls back to this exe in fire-and-exit boot mode.
+func autostartTarget(exe string) (string, string) {
+	dir := filepath.Dir(exe)
+	cand := filepath.Join(dir, "gd-ui.exe")
+	if runtime.GOOS != "windows" {
+		cand = filepath.Join(dir, "gd-ui")
+		if _, err := os.Stat(cand); err != nil {
+			cand = filepath.Join(dir, "gd-ui.exe")
+		}
+	}
+	if _, err := os.Stat(cand); err == nil {
+		return cand, "tray"
+	}
+	return exe, "boot"
+}
+
 // AutostartOn registers autostart: a scheduled task (Windows) or LaunchAgent
 // (macOS). On Windows, a broken schtasks (common on machines with network-path
-// or profile issues) falls back to the HKCU Run registry key.
+// or profile issues) falls back to the HKCU Run registry key. The Run-key
+// entry is what shows up in Task Manager's Startup apps, where the user can
+// disable it without uninstalling anything.
 func AutostartOn() (string, error) {
 	exe, err := os.Executable()
 	if err != nil {
 		return "", err
 	}
+	target, mode := autostartTarget(exe)
 	switch runtime.GOOS {
 	case "windows":
-		// schtasks: run at logon, start daemon+remount+serve
+		// schtasks: run at logon, start daemon+remount, keep the tray alive
 		cmd := exec.Command("schtasks", "/Create", "/F", "/TN", taskName,
 			"/SC", "ONLOGON", "/RL", "LIMITED",
-			"/TR", fmt.Sprintf("\"%s\" boot", exe))
+			"/TR", fmt.Sprintf("\"%s\" %s", target, mode))
 		out, err := cmd.CombinedOutput()
 		if err != nil {
 			// schtasks can be broken (network-path error, corrupted task store,
-			// domain policy). Fall back to the per-user Run key.
-			if regErr := runKeySet(exe); regErr != nil {
+			// domain policy). Fall back to the per-user Run key: visible in
+			// Task Manager and disable-able there.
+			if regErr := runKeySet(target, mode); regErr != nil {
 				return "", fmt.Errorf("schtasks: %v: %s; registry fallback: %w",
 					err, strings.TrimSpace(string(out)), regErr)
 			}
-			return "registry:HKCU\\...\\Run", nil
+			return "registry:HKCU\\...\\Run (" + filepath.Base(target) + " " + mode + ")", nil
 		}
 		// keep the fallback value from older runs out of the way
 		_ = runKeyDelete()
-		return "schtasks:" + taskName, nil
+		return "schtasks:" + taskName + " (" + filepath.Base(target) + " " + mode + ")", nil
 	case "darwin":
 		home, _ := os.UserHomeDir()
 		agents := filepath.Join(home, "Library", "LaunchAgents")
@@ -284,7 +307,7 @@ func AutostartOn() (string, error) {
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
   <key>Label</key><string>io.gd.autostart</string>
-  <key>ProgramArguments</key><array><string>` + exe + `</string><string>boot</string></array>
+  <key>ProgramArguments</key><array><string>` + target + `</string><string>` + mode + `</string></array>
   <key>RunAtLoad</key><true/>
 </dict></plist>`
 		p := filepath.Join(agents, "io.gd.autostart.plist")
@@ -296,7 +319,7 @@ func AutostartOn() (string, error) {
 		home, _ := os.UserHomeDir()
 		p := filepath.Join(home, ".config", "autostart", "gd.desktop")
 		_ = os.MkdirAll(filepath.Dir(p), 0o755)
-		entry := "[Desktop Entry]\nType=Application\nName=gd\nExec=" + exe + " boot\nX-GNOME-Autostart-enabled=true\n"
+		entry := "[Desktop Entry]\nType=Application\nName=gd\nExec=" + target + " " + mode + "\nX-GNOME-Autostart-enabled=true\n"
 		if err := os.WriteFile(p, []byte(entry), 0o644); err != nil {
 			return "", err
 		}
@@ -308,13 +331,7 @@ func AutostartOn() (string, error) {
 func AutostartOff() error {
 	switch runtime.GOOS {
 	case "windows":
-		// schtasks error text is localized; use /Query's exit code to detect
-		// whether the task exists at all before trying to delete it.
-		if err := exec.Command("schtasks", "/Query", "/TN", taskName).Run(); err == nil {
-			if out, err := exec.Command("schtasks", "/Delete", "/F", "/TN", taskName).CombinedOutput(); err != nil {
-				return fmt.Errorf("schtasks: %v: %s", err, strings.TrimSpace(string(out)))
-			}
-		}
+		deleteTask()
 		return runKeyDelete()
 	case "darwin":
 		home, _ := os.UserHomeDir()

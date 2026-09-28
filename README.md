@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="docs/img/logo.png" alt="OnlyDrive logo" width="480">
+</div>
+
 # gd: Google Drive as a local disk + MCP, in one command
 
 `gd` is a single exe that turns Google Drive (a regular Google One or
@@ -59,8 +63,25 @@ The panel is a single local page, no external assets. It can:
 - turn logon autostart on and off
 - run `gd doctor`, with or without auto-fix
 
-`gd-ui.exe boot` is the autostart mode: it raises the daemon, re-mounts the
-disks and exits, so a Run-key entry pointing at gd-ui is safe.
+`gd-ui.exe boot` is the old fire-and-exit autostart mode: it raises the
+daemon, re-mounts the disks and exits. The current autostart target is
+`gd-ui.exe tray`: it does the same logon work and then stays resident as a
+notification-area icon.
+
+## Tray: autostart you can see and stop
+
+With `gd autostart on`, logon launches `gd-ui.exe tray` (gd-ui must sit next
+to gd.exe; the installer downloads both). The entry is visible in Task
+Manager → Startup apps, where Windows lets you disable it without deleting
+anything. The tray icon itself offers:
+
+- **Open panel**: the browser control panel
+- **Pause disks**: unmount every drive and stop the daemon, so the
+  connection stops using CPU, memory and network while you optimize the
+  system; accounts and registrations are kept
+- **Resume disks**: start the daemon and mount everything back
+- **Quit**: end the resident process (the daemon keeps running if you
+  paused it; use `gd daemon stop` or Pause for that)
 
 The server binds to 127.0.0.1 only. To require an access token, set
 `GD_UI_TOKEN` before launching; clients then send it in the `X-GD-Token`
@@ -117,6 +138,9 @@ union rejects a lone upstream.
 where schtasks fails (a network-path error is the common case), it writes
 the per-user registry Run key `HKCU\...\CurrentVersion\Run\gd` instead and
 reports which method it used. `gd autostart off` removes both.
+
+Run-key entries are visible in Task Manager → Startup apps, where Windows
+lets you disable an entry without deleting it.
 
 ## Limitations (important)
 
