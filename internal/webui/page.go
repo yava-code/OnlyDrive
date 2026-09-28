@@ -216,6 +216,17 @@ const indexHTML = `<!doctype html>
 
   .empty { color: var(--muted); padding: 16px; font-family: "JetBrains Mono", monospace; font-size: 12px; }
 
+  /* Language toggle: same segmented shape as autostart, compact for the bar */
+  .lang-seg { display: inline-flex; border: 1px solid var(--hairline); border-radius: 6px; overflow: hidden; }
+  .lang-seg button {
+    border: 0; background: var(--surface); cursor: pointer;
+    font: 500 11px "JetBrains Mono", monospace; letter-spacing: .04em;
+    color: var(--muted); padding: 7px 10px; min-height: 30px;
+  }
+  .lang-seg button + button { border-left: 1px solid var(--hairline); }
+  .lang-seg button.active { background: var(--ink); color: #fff; }
+  .lang-seg button:hover:not(.active) { background: var(--hairline-soft); }
+
   @media (max-width: 640px) {
     .bar, main { padding-left: 14px; padding-right: 14px; }
     main { padding-top: 24px; gap: 24px; }
@@ -234,8 +245,12 @@ const indexHTML = `<!doctype html>
     <span class="slash">/</span>
     <span class="brand-sub">control panel</span>
     <span class="spacer"></span>
-    <span id="verdict" aria-live="polite"><span class="led led-off"></span>checking…</span>
-    <button class="btn" id="btn-refresh" type="button">Refresh</button>
+    <span id="verdict" aria-live="polite"><span class="led led-off"></span><span data-i18n="checking">checking…</span></span>
+    <div class="lang-seg" role="group" aria-label="Language">
+      <button id="btn-lang-en" type="button">EN</button>
+      <button id="btn-lang-ru" type="button">RU</button>
+    </div>
+    <button class="btn" id="btn-refresh" type="button" data-i18n="refresh">Refresh</button>
   </div>
 </header>
 
@@ -244,11 +259,11 @@ const indexHTML = `<!doctype html>
 
   <section class="enter d1">
     <div class="sec-head" style="margin-bottom:12px">
-      <h2>Google accounts</h2>
-      <button class="btn primary" id="btn-add" type="button">+ Add Google account</button>
+      <h2 data-i18n="accounts">Google accounts</h2>
+      <button class="btn primary" id="btn-add" type="button" data-i18n="add_account">+ Add Google account</button>
     </div>
     <div class="card">
-      <div id="accounts" class="empty">loading…</div>
+      <div id="accounts" class="empty" data-i18n="loading">loading…</div>
     </div>
   </section>
 
@@ -260,11 +275,11 @@ const indexHTML = `<!doctype html>
             <h2>Daemon</h2>
             <div class="svc-sub">127.0.0.1:5572</div>
           </div>
-          <span class="badge" id="daemon-badge"><span class="led led-off" id="daemon-led"></span><span id="daemon-state">checking…</span></span>
+          <span class="badge" id="daemon-badge"><span class="led led-off" id="daemon-led"></span><span id="daemon-state" data-i18n="checking">checking…</span></span>
         </div>
         <div class="btn-row">
-          <button class="btn" id="btn-daemon-start" type="button">Start</button>
-          <button class="btn" id="btn-daemon-stop" type="button">Stop</button>
+          <button class="btn" id="btn-daemon-start" type="button" data-i18n="start">Start</button>
+          <button class="btn" id="btn-daemon-stop" type="button" data-i18n="stop">Stop</button>
         </div>
       </div>
       <div class="card pad">
@@ -273,11 +288,11 @@ const indexHTML = `<!doctype html>
             <h2>S3 endpoint</h2>
             <div class="svc-sub">127.0.0.1:9000</div>
           </div>
-          <span class="badge" id="s3-badge"><span class="led led-off" id="s3-led"></span><span id="s3-state">checking…</span></span>
+          <span class="badge" id="s3-badge"><span class="led led-off" id="s3-led"></span><span id="s3-state" data-i18n="checking">checking…</span></span>
         </div>
         <div class="btn-row">
-          <button class="btn" id="btn-s3-start" type="button">Start S3</button>
-          <button class="btn" id="btn-s3-stop" type="button">Stop S3</button>
+          <button class="btn" id="btn-s3-start" type="button" data-i18n="start_s3">Start S3</button>
+          <button class="btn" id="btn-s3-stop" type="button" data-i18n="stop_s3">Stop S3</button>
         </div>
       </div>
     </div>
@@ -289,13 +304,13 @@ const indexHTML = `<!doctype html>
         <div class="svc-head">
           <div>
             <h2>WebDAV</h2>
-            <div class="svc-sub">127.0.0.1:9864 · mount on macOS/Linux</div>
+            <div class="svc-sub" data-i18n="dav_sub">127.0.0.1:9864 · mount on macOS/Linux</div>
           </div>
-          <span class="badge" id="dav-badge"><span class="led led-off" id="dav-led"></span><span id="dav-state">checking…</span></span>
+          <span class="badge" id="dav-badge"><span class="led led-off" id="dav-led"></span><span id="dav-state" data-i18n="checking">checking…</span></span>
         </div>
         <div class="btn-row">
-          <button class="btn" id="btn-dav-start" type="button">Start WebDAV</button>
-          <button class="btn" id="btn-dav-stop" type="button">Stop WebDAV</button>
+          <button class="btn" id="btn-dav-start" type="button" data-i18n="start_dav">Start WebDAV</button>
+          <button class="btn" id="btn-dav-stop" type="button" data-i18n="stop_dav">Stop WebDAV</button>
         </div>
       </div>
       <div class="card pad" style="visibility:hidden" aria-hidden="true">
@@ -305,23 +320,23 @@ const indexHTML = `<!doctype html>
 
   <section class="enter d3">
     <div class="sec-head" style="margin-bottom:12px">
-      <h2>Maintenance</h2>
+      <h2 data-i18n="maintenance">Maintenance</h2>
     </div>
     <div class="card pad">
       <div class="maint-row">
         <div class="seg" role="group" aria-label="Autostart">
-          <button id="btn-autostart-on" type="button">Autostart on</button>
-          <button id="btn-autostart-off" type="button">Autostart off</button>
+          <button id="btn-autostart-on" type="button" data-i18n="autostart_on">Autostart on</button>
+          <button id="btn-autostart-off" type="button" data-i18n="autostart_off">Autostart off</button>
         </div>
         <div style="display:flex;gap:8px">
-          <button class="btn" id="btn-doctor" type="button">Run doctor</button>
-          <button class="btn" id="btn-doctor-fix" type="button">Run doctor (fix)</button>
+          <button class="btn" id="btn-doctor" type="button" data-i18n="run_doctor">Run doctor</button>
+          <button class="btn" id="btn-doctor-fix" type="button" data-i18n="run_doctor_fix">Run doctor (fix)</button>
         </div>
       </div>
       <div id="doctor-panel">
         <div class="doctor-head">
-          <span id="doctor-title">diagnostics</span>
-          <button id="btn-doctor-close" type="button">dismiss [x]</button>
+          <span id="doctor-title" data-i18n="diagnostics">diagnostics</span>
+          <button id="btn-doctor-close" type="button" data-i18n="dismiss">dismiss [x]</button>
         </div>
         <pre id="doctor-output"></pre>
       </div>
@@ -330,7 +345,7 @@ const indexHTML = `<!doctype html>
 
   <div class="footnote enter d3">
     <span>lock</span>
-    <p style="margin:0">gd ui listens on <b>127.0.0.1</b> only. Set <b>GD_UI_TOKEN</b> to require an access token.</p>
+    <p style="margin:0" data-i18n="lock_note">gd ui listens on <b>127.0.0.1</b> only. Set <b>GD_UI_TOKEN</b> to require an access token.</p>
   </div>
 </main>
 
@@ -338,7 +353,7 @@ const indexHTML = `<!doctype html>
   <div class="bar">
     <span>OnlyDrive <span id="foot-ver">v0.1.2</span></span>
     <span class="spacer"></span>
-    <span><span class="led led-off" id="foot-led"></span><span id="foot-state">connecting</span></span>
+    <span><span class="led led-off" id="foot-led"></span><span id="foot-state" data-i18n="connecting">connecting</span></span>
   </div>
 </footer>
 
@@ -349,9 +364,85 @@ const indexHTML = `<!doctype html>
 (function () {
   var status = document.getElementById("status");
 
+  // ---- i18n: EN/RU, choice in localStorage, first visit follows the browser
+  var STR = {
+    en: {
+      checking: "checking…", refresh: "Refresh", accounts: "Google accounts",
+      add_account: "+ Add Google account", loading: "loading…",
+      start: "Start", stop: "Stop", start_s3: "Start S3", stop_s3: "Stop S3",
+      start_dav: "Start WebDAV", stop_dav: "Stop WebDAV",
+      dav_sub: "127.0.0.1:9864 · mount on macOS/Linux",
+      maintenance: "Maintenance", autostart_on: "Autostart on", autostart_off: "Autostart off",
+      run_doctor: "Run doctor", run_doctor_fix: "Run doctor (fix)", diagnostics: "diagnostics",
+      dismiss: "dismiss [x]", lock_note: 'gd ui listens on <b>127.0.0.1</b> only. Set <b>GD_UI_TOKEN</b> to require an access token.',
+      connecting: "connecting",
+      working: "working…", done: "done", offline: "offline",
+      daemon_running: "daemon running", daemon_stopped: "daemon stopped",
+      running: "running", stopped: "stopped", idle: "idle",
+      rpc_active: "local rpc active", rpc_stopped: "rpc stopped",
+      th_name: "Name", th_email: "Email", th_quota: "Quota", th_actions: "Actions",
+      mounted: "mounted", not_mounted: "not mounted",
+      used: " used", unavailable: "unavailable",
+      mount: "Mount", unmount: "Unmount", remove: "Remove",
+      empty_accounts: 'No accounts yet. Click "Add Google account" and allow access in the browser.',
+      load_failed: "failed to load state: ",
+      doctor_check: "doctor --check", doctor_fix: "doctor --fix (repair mode)",
+      scanning: "scanning environment…", doctor_done: "doctor finished", doctor_failed: "doctor failed: "
+    },
+    ru: {
+      checking: "проверяем…", refresh: "Обновить", accounts: "Аккаунты Google",
+      add_account: "+ Добавить аккаунт Google", loading: "загрузка…",
+      start: "Запустить", stop: "Остановить", start_s3: "Запустить S3", stop_s3: "Остановить S3",
+      start_dav: "Запустить WebDAV", stop_dav: "Остановить WebDAV",
+      dav_sub: "127.0.0.1:9864 · диск на macOS/Linux",
+      maintenance: "Обслуживание", autostart_on: "Автозапуск вкл", autostart_off: "Автозапуск выкл",
+      run_doctor: "Проверка", run_doctor_fix: "Проверка (исправить)", diagnostics: "диагностика",
+      dismiss: "скрыть [x]", lock_note: 'gd ui слушает только <b>127.0.0.1</b>. Задайте <b>GD_UI_TOKEN</b>, чтобы требовать токен доступа.',
+      connecting: "соединяем…",
+      working: "работаем…", done: "готово", offline: "нет связи",
+      daemon_running: "демон работает", daemon_stopped: "демон остановлен",
+      running: "работает", stopped: "остановлен", idle: "простаивает",
+      rpc_active: "локальный rpc активен", rpc_stopped: "rpc остановлен",
+      th_name: "Имя", th_email: "Email", th_quota: "Квота", th_actions: "Действия",
+      mounted: "смонтирован", not_mounted: "не смонтирован",
+      used: " занято", unavailable: "недоступно",
+      mount: "Смонтировать", unmount: "Отключить", remove: "Удалить",
+      empty_accounts: 'Аккаунтов пока нет. Нажмите "Добавить аккаунт Google" и разрешите доступ в браузере.',
+      load_failed: "не удалось загрузить состояние: ",
+      doctor_check: "doctor --check", doctor_fix: "doctor --fix (режим исправления)",
+      scanning: "проверяем окружение…", doctor_done: "проверка завершена", doctor_failed: "ошибка проверки: "
+    }
+  };
+  var lang = "en";
+  try {
+    var saved = localStorage.getItem("gd-lang");
+    if (saved === "en" || saved === "ru") lang = saved;
+    else if ((navigator.language || "").toLowerCase().indexOf("ru") === 0) lang = "ru";
+  } catch (e) {}
+  function t(key) { return (STR[lang] && STR[lang][key]) || STR.en[key] || key; }
+
+  function applyStatic() {
+    var nodes = document.querySelectorAll("[data-i18n]");
+    nodes.forEach(function (el) { el.innerHTML = t(el.getAttribute("data-i18n")); });
+    document.getElementById("btn-lang-en").classList.toggle("active", lang === "en");
+    document.getElementById("btn-lang-ru").classList.toggle("active", lang === "ru");
+    document.documentElement.lang = lang;
+  }
+
+  function setLang(l) {
+    lang = l;
+    try { localStorage.setItem("gd-lang", l); } catch (e) {}
+    applyStatic();
+    refresh(true);
+  }
+
+  document.getElementById("btn-lang-en").addEventListener("click", function () { setLang("en"); });
+  document.getElementById("btn-lang-ru").addEventListener("click", function () { setLang("ru"); });
+  applyStatic();
+
   function setBusy(msg) {
     status.classList.remove("error");
-    status.textContent = msg || "working…";
+    status.textContent = msg || t("working");
   }
   function setError(msg) {
     status.classList.add("error");
@@ -416,9 +507,9 @@ const indexHTML = `<!doctype html>
         if (!keepStatus) clearStatus();
       })
       .catch(function (e) {
-        setError("failed to load state: " + e.message);
+        setError(t("load_failed") + e.message);
         setLed("foot-led", false);
-        document.getElementById("foot-state").textContent = "offline";
+        document.getElementById("foot-state").textContent = t("offline");
       });
   }
 
@@ -428,36 +519,36 @@ const indexHTML = `<!doctype html>
     var led = document.createElement("span");
     led.className = "led " + (st.daemon_running ? "led-ok led-ping" : "led-off");
     v.appendChild(led);
-    v.appendChild(document.createTextNode(st.daemon_running ? "daemon running" : "daemon stopped"));
+    v.appendChild(document.createTextNode(st.daemon_running ? t("daemon_running") : t("daemon_stopped")));
     v.className = st.daemon_running ? "verdict-ok" : "verdict-bad";
 
     setLed("daemon-led", st.daemon_running, true);
     var d = document.getElementById("daemon-state");
-    d.textContent = st.daemon_running ? "running" : "stopped";
+    d.textContent = st.daemon_running ? t("running") : t("stopped");
     document.getElementById("daemon-badge").className = "badge" + (st.daemon_running ? " ok" : "");
 
     setLed("s3-led", st.s3_running, true);
     var s3 = document.getElementById("s3-state");
-    s3.textContent = st.s3_running ? "running " + st.s3_addr : "idle";
+    s3.textContent = st.s3_running ? t("running") + " " + st.s3_addr : t("idle");
     document.getElementById("s3-badge").className = "badge" + (st.s3_running ? " ok" : "");
     setLed("dav-led", st.webdav_running, true);
     var dav = document.getElementById("dav-state");
-    dav.textContent = st.webdav_running ? "running " + st.webdav_addr : "idle";
+    dav.textContent = st.webdav_running ? t("running") + " " + st.webdav_addr : t("idle");
     document.getElementById("dav-badge").className = "badge" + (st.webdav_running ? " ok" : "");
 
     setLed("foot-led", st.daemon_running, true);
-    document.getElementById("foot-state").textContent = st.daemon_running ? "local rpc active" : "rpc stopped";
+    document.getElementById("foot-state").textContent = st.daemon_running ? t("rpc_active") : t("rpc_stopped");
 
     var el = document.getElementById("accounts");
     el.className = "";
     if (!st.accounts || st.accounts.length === 0) {
       el.className = "empty";
-      el.textContent = "No accounts yet. Click \"Add Google account\" and allow access in the browser.";
+      el.textContent = t("empty_accounts");
       return;
     }
     el.innerHTML = "";
     var tbl = document.createElement("table");
-    tbl.innerHTML = "<thead><tr><th>Name</th><th>Email</th><th>Quota</th><th style=\"text-align:right\">Actions</th></tr></thead>";
+    tbl.innerHTML = "<thead><tr><th>" + t("th_name") + "</th><th>" + t("th_email") + "</th><th>" + t("th_quota") + "</th><th style=\"text-align:right\">" + t("th_actions") + "</th></tr></thead>";
     var tb = document.createElement("tbody");
     st.accounts.forEach(function (a) {
       var tr = document.createElement("tr");
@@ -466,7 +557,7 @@ const indexHTML = `<!doctype html>
       td1.className = "mono acc-name";
       var dot = document.createElement("span");
       dot.className = "mount-dot " + (a.mounted ? "on" : "off");
-      dot.title = a.mounted ? "mounted" : "not mounted";
+      dot.title = a.mounted ? t("mounted") : t("not_mounted");
       td1.appendChild(dot);
       td1.appendChild(document.createTextNode(a.name));
 
@@ -481,7 +572,7 @@ const indexHTML = `<!doctype html>
       var nums = document.createElement("div");
       nums.className = "quota-nums";
       var pct = (a.quota_ok && a.total > 0) ? Math.min(100, a.used / a.total * 100) : 0;
-      nums.innerHTML = "<span>" + (a.quota_ok ? fmtGB(a.used) + " used" : "unavailable") + "</span><span>" + fmtGB(a.total) + "</span>";
+      nums.innerHTML = "<span>" + (a.quota_ok ? fmtGB(a.used) + t("used") : t("unavailable")) + "</span><span>" + fmtGB(a.total) + "</span>";
       var track = document.createElement("div");
       track.className = "quota-track";
       var fill = document.createElement("div");
@@ -504,9 +595,9 @@ const indexHTML = `<!doctype html>
         b.addEventListener("click", function () { act(path, body); });
         return b;
       };
-      td4.appendChild(mkBtn(a.mounted ? "Unmount" : "Mount", a.mounted ? "/api/unmount" : "/api/mount", { account: a.name }));
+      td4.appendChild(mkBtn(a.mounted ? t("unmount") : t("mount"), a.mounted ? "/api/unmount" : "/api/mount", { account: a.name }));
       td4.appendChild(document.createTextNode(" "));
-      td4.appendChild(mkBtn("Remove", "/api/remove", { account: a.name }, "danger-text"));
+      td4.appendChild(mkBtn(t("remove"), "/api/remove", { account: a.name }, "danger-text"));
       tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4);
       tb.appendChild(tr);
     });
@@ -520,7 +611,7 @@ const indexHTML = `<!doctype html>
     btns.forEach(function (b) { b.disabled = true; });
     post(path, body).then(function (res) {
       clearStatus();
-      toast(res.message || "done");
+      toast(res.message || t("done"));
       refresh(true);
     }).catch(function (e) {
       setError(e.message);
@@ -535,8 +626,8 @@ const indexHTML = `<!doctype html>
   function runDoctor(fix) {
     var panel = document.getElementById("doctor-panel");
     var out = document.getElementById("doctor-output");
-    document.getElementById("doctor-title").textContent = fix ? "doctor --fix (repair mode)" : "doctor --check";
-    out.textContent = "scanning environment…";
+    document.getElementById("doctor-title").textContent = fix ? t("doctor_fix") : t("doctor_check");
+    out.textContent = t("scanning");
     panel.classList.add("open");
     post("/api/doctor", { fix: fix }).then(function (res) {
       out.textContent = "";
@@ -547,9 +638,9 @@ const indexHTML = `<!doctype html>
         line.className = c.ok ? "ok-line" : "bad-line";
         out.appendChild(line);
       });
-      toast("doctor finished");
+      toast(t("doctor_done"));
     }).catch(function (e) {
-      out.textContent = "doctor failed: " + e.message;
+      out.textContent = t("doctor_failed") + e.message;
       toast(e.message, "bad");
     });
   }
