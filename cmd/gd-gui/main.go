@@ -14,6 +14,8 @@ import (
 	"os/signal"
 	"runtime"
 	"strconv"
+	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -186,7 +188,7 @@ func runPanel(port int) {
 	trayReady := make(chan bool, 1)
 	go func() {
 		cb := callbacks(
-			func() string { return trayStatusLine() },
+			func() string { return cachedStatus() },
 			func(msg string) { fmt.Println(msg) },
 		)
 		cb.Quit = func() {
@@ -255,7 +257,7 @@ func runTray() {
 	}()
 
 	cb := callbacks(
-		func() string { return trayStatusLine() },
+		func() string { return cachedStatus() },
 		func(msg string) { fmt.Println(msg) },
 	)
 	cb.Quit = func() {
@@ -271,62 +273,79 @@ func runTray() {
 	}
 }
 
-// tipTicker keeps the tray tooltip honest: mounted disks and pooled usage
-// change outside our control (mounts from the CLI, files landing in Drive).
+// tipTicker keeps the tray tooltip honest: it recomputes the per-account
+// breakdown off the tray thread, caches it, then asks the tray to repaint.
 func tipTicker() {
+	refresh := func() {
+		statusCache.Store(trayStatusLine())
+		tray.RefreshStatus()
+	}
+	refresh()
 	tick := time.NewTicker(5 * time.Second)
 	defer tick.Stop()
 	for range tick.C {
-		tray.RefreshStatus()
+		refresh()
 	}
 }
 
-// trayStatusLine builds the live tooltip: mounts and pooled usage.
+// trayStatusLine builds the tooltip: a pooled header plus one line per
+// account with its own usage and drive letter. About calls can take
+// seconds, so this runs on the ticker goroutine and the result is cached;
+// the tray thread only reads the cache.
 func trayStatusLine() string {
 	cfg, err := config.Load()
 	if err != nil {
 		return "OnlyDrive " + version.String()
 	}
-	mounted := len(cfg.Mounts)
-	letters := ""
-	for _, m := range cfg.Mounts {
-		letters += m.Letter + " "
+	if len(cfg.Accounts) == 0 {
+		return "OnlyDrive: no accounts (run: gd add)"
 	}
-	used, total := pooledUsage()
-	pause := ""
 	if !daemon.Running() {
-		pause = " · paused"
+		return fmt.Sprintf("OnlyDrive: paused (%d account(s))", len(cfg.Accounts))
+	}
+	header := fmt.Sprintf("OnlyDrive: %d account(s)", len(cfg.Accounts))
+	var used, total float64
+	lines := make([]string, 0, len(cfg.Accounts))
+	if m, err := webui.Manager(); err == nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+		defer cancel()
+		for _, a := range cfg.Accounts {
+			letter := ""
+			if mm := cfg.MountForAccount(a.Name); mm != nil {
+				letter = " (" + mm.Letter + ")"
+			}
+			about, err := m.About(ctx, a.Remote+":")
+			if err != nil {
+				lines = append(lines, a.Name+": n/a"+letter)
+				continue
+			}
+			u, _ := about["used"].(float64)
+			t, _ := about["total"].(float64)
+			used += u
+			total += t
+			lines = append(lines, a.Name+": "+humanBytes(u)+letter)
+		}
+	} else {
+		for _, a := range cfg.Accounts {
+			lines = append(lines, a.Name+": n/a")
+		}
 	}
 	if total > 0 {
-		return fmt.Sprintf("OnlyDrive: %d disk(s) %s· %s of %s in pool%s",
-			mounted, letters, humanBytes(used), humanBytes(total), pause)
+		header = fmt.Sprintf("OnlyDrive: %s of %s in pool", humanBytes(used), humanBytes(total))
 	}
-	return fmt.Sprintf("OnlyDrive: %d disk(s) %s%s", mounted, letters, pause)
+	return header + "\n" + strings.Join(lines, "\n")
 }
 
-// pooledUsage sums quota across accounts (best effort; 0 on failure).
-func pooledUsage() (used, total float64) {
-	cfg, err := config.Load()
-	if err != nil {
-		return 0, 0
+// statusCache holds the last rendered tooltip text. Written only by the
+// ticker goroutine, read by the tray thread.
+var statusCache atomic.Value
+
+// cachedStatus is the Status callback: cache-first, honest fallback.
+func cachedStatus() string {
+	if v, ok := statusCache.Load().(string); ok {
+		return v
 	}
-	m, err := webui.Manager()
-	if err != nil {
-		return 0, 0
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
-	defer cancel()
-	for _, a := range cfg.Accounts {
-		about, err := m.About(ctx, a.Remote+":")
-		if err != nil {
-			continue
-		}
-		u, _ := about["used"].(float64)
-		t, _ := about["total"].(float64)
-		used += u
-		total += t
-	}
-	return used, total
+	return "OnlyDrive " + version.String()
 }
 
 // humanBytes renders a byte count the way the CLI and panel do.

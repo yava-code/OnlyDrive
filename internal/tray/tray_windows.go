@@ -9,6 +9,7 @@ package tray
 import (
 	"fmt"
 	"os"
+	"strings"
 	"syscall"
 	"unsafe"
 )
@@ -137,7 +138,7 @@ type notifyIconData struct {
 	UFlags           uint32
 	UCallbackMessage uint32
 	HIcon            uintptr
-	SzTip            [128]uint16
+	SzTip            [256]uint16
 	DwState          uint32
 	DwStateMask      uint32
 	SzInfo           [256]uint16
@@ -260,13 +261,13 @@ func RefreshStatus() {
 	procPostMessageW.Call(current.hwnd, wmAppTrayRefresh, 0, 0)
 }
 
-func setTipBuf(dst *[128]uint16, s string) {
+func setTipBuf(dst *[256]uint16, s string) {
 	u, err := syscall.UTF16FromString(s)
 	if err != nil {
 		return
 	}
-	if len(u) > 128 {
-		u = u[:128]
+	if len(u) > 256 {
+		u = u[:256]
 		u[len(u)-1] = 0
 	}
 	copy(dst[:], u)
@@ -322,6 +323,11 @@ func (t *Tray) showMenu() {
 		procAppendMenuW.Call(menu, flags, id, uintptr(unsafe.Pointer(p)))
 	}
 	if s := t.tipText(); s != "gd" || t.cb.Status != nil {
+		// The tooltip carries the full per-account breakdown; the menu shows
+		// only the first line, grayed, as a status header.
+		if i := strings.IndexByte(s, '\n'); i >= 0 {
+			s = s[:i]
+		}
 		addItem(mfGrayed|mfString, 0, s)
 		addItem(mfSep, 0, "")
 	}
