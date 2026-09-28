@@ -47,7 +47,7 @@ Usage:
   gd mcp prompt [file]         write AGENTS.md-style instructions for LLM agents
   gd doctor [--fix]            diagnose environment (and auto-fix missing parts)
   gd ui [--port N]             browser control panel on 127.0.0.1 (default port 5590)
-  gd update                    update managed rclone to the pinned version
+  gd update                    update OnlyDrive itself (SHA-256 verified) and the pinned rclone
   gd version                   print version
 `
 

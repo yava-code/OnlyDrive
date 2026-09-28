@@ -114,7 +114,7 @@ header.
 | `gd mcp prompt [file]` | write an AGENTS.md for LLM agents |
 | `gd ui [--port N]` | browser control panel |
 | `gd doctor [--fix]` | diagnostics + auto-fix |
-| `gd update` | update rclone |
+| `gd update` | update OnlyDrive itself (SHA-256-verified) and rclone |
 
 ## MCP tools
 
@@ -159,6 +159,26 @@ The release version lives in exactly one place: `internal/version`
 (`Number` constant). A release bumps that constant and tags the same
 `vX.Y.Z`; the landing page and panel footer repeat the string manually at
 release time.
+
+## Updating
+
+```bat
+gd update
+```
+
+Two steps, in order:
+
+1. **OnlyDrive itself.** The newest GitHub release is resolved, the asset
+   for your platform is downloaded and verified against the release's
+   `checksums.txt` (SHA-256). A mismatch discards the download before
+   anything is touched, and a magic-bytes check rejects HTML error pages
+   even if a checksum ever matched. The old binary is kept as `gd.exe.old`
+   next to the new one; a failed swap restores it.
+2. **The pinned rclone engine**, same as before (its own published
+   SHA256SUMS, daemon restart if it was running).
+
+OnlyDrive updates land in the same release CI that publishes the landing
+page, so `gd update` and a fresh download always deliver the same bytes.
 
 ## Autostart
 

@@ -20,7 +20,9 @@ import (
 	"gd/internal/mcpinstall"
 	"gd/internal/mcpserver"
 	"gd/internal/rclone"
+	"gd/internal/selfupdate"
 	"gd/internal/serve"
+	"gd/internal/version"
 )
 
 // --- accounts ------------------------------------------------------------
@@ -670,6 +672,24 @@ func cmdDoctor(rest []string) error {
 }
 
 func cmdUpdate() error {
+	// 1. OnlyDrive itself: download the newest release, verify SHA-256
+	// against the release checksums.txt, swap atomically.
+	oldTo, newTag, err := selfupdate.Update(context.Background(), "", false)
+	switch {
+	case err != nil:
+		fmt.Fprintln(os.Stderr, "self-update failed:", err)
+	case newTag == "v"+version.Number:
+		fmt.Println("OnlyDrive", version.String(), "is the latest release.")
+		if oldTo != "" {
+			_ = os.Remove(oldTo)
+		}
+	default:
+		fmt.Println("OnlyDrive updated:", version.String(), "->", newTag)
+		fmt.Println("  backup of the old binary:", oldTo)
+		fmt.Println("  run the new version: close this process and start gd again")
+	}
+
+	// 2. The pinned rclone engine (unchanged behavior).
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 	m, err := rclone.New()
