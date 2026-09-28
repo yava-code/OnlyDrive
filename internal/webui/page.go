@@ -17,7 +17,7 @@ const indexHTML = `<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>OnlyDrive / gd control panel</title>
+<title>OnlyDrive control panel</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -230,9 +230,9 @@ const indexHTML = `<!doctype html>
 <body>
 <header>
   <div class="bar">
-    <img class="logo" src="/logo.png" alt="OnlyDrive logo">
+    <img class="logo" src="/logo.png" alt="OnlyDrive">
     <span class="slash">/</span>
-    <span class="brand-sub">gd control panel</span>
+    <span class="brand-sub">control panel</span>
     <span class="spacer"></span>
     <span id="verdict" aria-live="polite"><span class="led led-off"></span>checking…</span>
     <button class="btn" id="btn-refresh" type="button">Refresh</button>
@@ -283,6 +283,26 @@ const indexHTML = `<!doctype html>
     </div>
   </section>
 
+  <section class="enter d2">
+    <div class="grid2">
+      <div class="card pad">
+        <div class="svc-head">
+          <div>
+            <h2>WebDAV</h2>
+            <div class="svc-sub">127.0.0.1:9864 · mount on macOS/Linux</div>
+          </div>
+          <span class="badge" id="dav-badge"><span class="led led-off" id="dav-led"></span><span id="dav-state">checking…</span></span>
+        </div>
+        <div class="btn-row">
+          <button class="btn" id="btn-dav-start" type="button">Start WebDAV</button>
+          <button class="btn" id="btn-dav-stop" type="button">Stop WebDAV</button>
+        </div>
+      </div>
+      <div class="card pad" style="visibility:hidden" aria-hidden="true">
+      </div>
+    </div>
+  </section>
+
   <section class="enter d3">
     <div class="sec-head" style="margin-bottom:12px">
       <h2>Maintenance</h2>
@@ -316,7 +336,7 @@ const indexHTML = `<!doctype html>
 
 <footer>
   <div class="bar">
-    <span>gd <span id="foot-ver">v0.1.1</span></span>
+    <span>OnlyDrive <span id="foot-ver">v0.1.2</span></span>
     <span class="spacer"></span>
     <span><span class="led led-off" id="foot-led"></span><span id="foot-state">connecting</span></span>
   </div>
@@ -420,6 +440,10 @@ const indexHTML = `<!doctype html>
     var s3 = document.getElementById("s3-state");
     s3.textContent = st.s3_running ? "running " + st.s3_addr : "idle";
     document.getElementById("s3-badge").className = "badge" + (st.s3_running ? " ok" : "");
+    setLed("dav-led", st.webdav_running, true);
+    var dav = document.getElementById("dav-state");
+    dav.textContent = st.webdav_running ? "running " + st.webdav_addr : "idle";
+    document.getElementById("dav-badge").className = "badge" + (st.webdav_running ? " ok" : "");
 
     setLed("foot-led", st.daemon_running, true);
     document.getElementById("foot-state").textContent = st.daemon_running ? "local rpc active" : "rpc stopped";
@@ -536,6 +560,8 @@ const indexHTML = `<!doctype html>
   document.getElementById("btn-daemon-stop").addEventListener("click", function () { act("/api/daemon", { action: "stop" }); });
   document.getElementById("btn-s3-start").addEventListener("click", function () { act("/api/serve-s3", { action: "start" }); });
   document.getElementById("btn-s3-stop").addEventListener("click", function () { act("/api/serve-s3", { action: "stop" }); });
+  document.getElementById("btn-dav-start").addEventListener("click", function () { act("/api/serve-webdav", { action: "start" }); });
+  document.getElementById("btn-dav-stop").addEventListener("click", function () { act("/api/serve-webdav", { action: "stop" }); });
   document.getElementById("btn-autostart-on").addEventListener("click", function (e) {
     e.target.classList.add("active");
     document.getElementById("btn-autostart-off").classList.remove("active");

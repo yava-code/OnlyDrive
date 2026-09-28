@@ -51,6 +51,7 @@ on 127.0.0.1 only.
 ```bat
 gd serve union            :: one pool over all accounts (remote gd-union)
 gd serve s3 gd-union      :: S3 API on 127.0.0.1:9000, keys in the output / gd serve status
+gd serve webdav           :: WebDAV on 127.0.0.1:9864, mount the pool on macOS/Linux
 ```
 
 Any S3 client connects with those keys. This is not Amazon S3 and not

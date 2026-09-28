@@ -4,7 +4,7 @@ project_name: gd
 builds:
   - id: gd
     main: ./cmd/gd
-    binary: gd-{{ .Os }}-{{ .Arch }}
+    binary: OnlyDrive-{{ .Os }}-{{ .Arch }}
     env: [CGO_ENABLED=0]
     goos: [windows, darwin, linux]
     goarch: [amd64, arm64]
@@ -15,7 +15,7 @@ builds:
         goarch: arm64
   - id: gd-ui
     main: ./cmd/gd-gui
-    binary: gd-ui-{{ .Os }}-{{ .Arch }}
+    binary: OnlyDrive-ui-{{ .Os }}-{{ .Arch }}
     env: [CGO_ENABLED=0]
     goos: [windows, darwin, linux]
     goarch: [amd64, arm64]
@@ -25,18 +25,18 @@ builds:
       - goos: linux
         goarch: arm64
 
-# Ship raw binaries named after the build id. In binary mode goreleaser
-# appends .exe for windows itself; putting .exe in name_template doubles it
-# (that is how v0.1.0 shipped gd-windows-amd64.exe.exe).
+# Ship raw binaries named after the build id (OnlyDrive-windows-amd64.exe).
+# In binary mode goreleaser appends .exe for windows itself; putting .exe in
+# name_template doubles it (that is how v0.1.0 shipped gd-windows-amd64.exe.exe).
 archives:
   - id: gd
     builds: [gd]
     formats: [binary]
-    name_template: "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}"
+    name_template: "OnlyDrive-{{ .Os }}-{{ .Arch }}"
   - id: gd-ui
     builds: [gd-ui]
     formats: [binary]
-    name_template: "{{ .ProjectName }}-ui-{{ .Os }}-{{ .Arch }}"
+    name_template: "OnlyDrive-ui-{{ .Os }}-{{ .Arch }}"
 
 checksum:
   name_template: 'checksums.txt'

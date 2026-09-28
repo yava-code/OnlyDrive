@@ -62,7 +62,7 @@ func TestIndexPageServed(t *testing.T) {
 		t.Fatal(err)
 	}
 	page := string(body)
-	for _, want := range []string{"gd control panel", "Add Google account", "btn-doctor", "logo.png"} {
+	for _, want := range []string{"control panel", "Add Google account", "btn-doctor", "logo.png", "OnlyDrive"} {
 		if !strings.Contains(page, want) {
 			t.Fatalf("index page missing %q", want)
 		}

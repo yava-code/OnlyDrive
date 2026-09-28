@@ -24,6 +24,25 @@ jobs:
       - run: go vet ./...
       - run: go test ./...
 
+  # macOS mount smoke: the roadmap item "macOS (rclone nfsmount)" is only
+  # closed when the round-trip actually runs somewhere. rclone ships nfsmount
+  # in the official binary; the runner gets it via the setup step below.
+  macos-mount-smoke:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+      - name: Install rclone (nfsmount backend)
+        run: |
+          brew install rclone
+          rclone version
+      - name: Live mount smoke (local fs remote)
+        env:
+          GD_LIVE_SMOKE: '1'
+        run: go test ./internal/serve/ -run TestLiveLocalMount -v
+
   release:
     if: startsWith(github.ref, 'refs/tags/')
     needs: test

@@ -9,10 +9,13 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"gd/internal/version"
 )
 
-// Version is the current gd release.
-const Version = "0.1.1"
+// Version is the current gd release, aliased to the single source of truth
+// in internal/version so callers keep their existing references.
+const Version = version.Number
 
 // PinnedRcloneVersion is the rclone version gd downloads and manages.
 const PinnedRcloneVersion = "1.75.1"

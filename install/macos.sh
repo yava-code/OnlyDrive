@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # gd installer (macOS / Linux), one line:
 #   curl -fsSL https://raw.githubusercontent.com/yava-code/OnlyDrive/main/install/macos.sh | bash
-# Env overrides: GD_REPO=user/repo  GD_VERSION=v0.1.1
+# Env overrides: GD_REPO=user/repo  GD_VERSION=v0.1.2
 set -euo pipefail
 
 REPO="${GD_REPO:-yava-code/OnlyDrive}"
@@ -27,7 +27,7 @@ fi
 
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')   # darwin | linux
 ARCH=$(uname -m); [ "$ARCH" = "x86_64" ] && ARCH=amd64; [ "$ARCH" = "arm64" ] && ARCH=arm64
-URL="$BASE/download/$VER/gd-$OS-$ARCH"
+URL="$BASE/download/$VER/OnlyDrive-$OS-$ARCH"
 DEST="${GD_DEST:-/usr/local/bin/gd}"
 
 echo "downloading gd $VER ($OS/$ARCH) -> $DEST"

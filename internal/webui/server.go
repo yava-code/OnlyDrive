@@ -76,6 +76,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /api/unmount", s.action(s.handleUnmount))
 	mux.HandleFunc("POST /api/daemon", s.action(s.handleDaemon))
 	mux.HandleFunc("POST /api/serve-s3", s.action(s.handleServeS3))
+	mux.HandleFunc("POST /api/serve-webdav", s.action(s.handleServeWebDAV))
 	mux.HandleFunc("POST /api/autostart", s.action(s.handleAutostart))
 	mux.HandleFunc("POST /api/doctor", s.action(s.handleDoctor))
 	mux.HandleFunc("POST /api/remove", s.action(s.handleRemove))
@@ -167,6 +168,7 @@ func (s *Server) handleState(w http.ResponseWriter, r *http.Request) {
 	st.S3Addr = s3Addr
 	st.S3AccessKey = s3Key
 	st.S3SecretKey = s3Secret
+	st.WebDAVRunning, st.WebDAVAddr = serve.WebDAVStatus()
 
 	if daemon.Running() {
 		if m, err := manager(); err == nil {
@@ -212,6 +214,8 @@ type statePayload struct {
 	S3Addr        string         `json:"s3_addr,omitempty"`
 	S3AccessKey   string         `json:"s3_access_key,omitempty"`
 	S3SecretKey   string         `json:"s3_secret_key,omitempty"`
+	WebDAVRunning bool           `json:"webdav_running"`
+	WebDAVAddr    string         `json:"webdav_addr,omitempty"`
 }
 
 // accountView is one account row in the dashboard.
@@ -224,6 +228,10 @@ type accountView struct {
 	Total   float64 `json:"total,omitempty"`
 	Used    float64 `json:"used,omitempty"`
 }
+
+// Manager builds an authenticated rclone Manager (same as MCP server does).
+// Exported for the tray status line, which reads pooled usage.
+func Manager() (*rclone.Manager, error) { return manager() }
 
 // manager builds an authenticated rclone Manager (same as MCP server does).
 func manager() (*rclone.Manager, error) {
@@ -326,6 +334,35 @@ func (s *Server) handleServeS3(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		writeJSON(w, http.StatusOK, actionOK{OK: true, Message: "S3 stopped"})
+	default:
+		writeJSON(w, http.StatusBadRequest, actionErr{Error: `action must be "start" or "stop"`})
+	}
+}
+
+// handleServeWebDAV starts or stops the WebDAV endpoint (body: {"action":"start"|"stop"}).
+func (s *Server) handleServeWebDAV(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		Action string `json:"action"`
+	}
+	_ = json.NewDecoder(r.Body).Decode(&in)
+	switch in.Action {
+	case "start":
+		if _, err := serve.EnsureUnion(); err != nil {
+			writeJSON(w, http.StatusInternalServerError, actionErr{Error: err.Error()})
+			return
+		}
+		msg, err := serve.WebDAVStart("gd-union", 9864)
+		if err != nil {
+			writeJSON(w, http.StatusInternalServerError, actionErr{Error: err.Error()})
+			return
+		}
+		writeJSON(w, http.StatusOK, actionOK{OK: true, Message: msg})
+	case "stop":
+		if err := serve.WebDAVStop(); err != nil {
+			writeJSON(w, http.StatusInternalServerError, actionErr{Error: err.Error()})
+			return
+		}
+		writeJSON(w, http.StatusOK, actionOK{OK: true, Message: "WebDAV stopped"})
 	default:
 		writeJSON(w, http.StatusBadRequest, actionErr{Error: `action must be "start" or "stop"`})
 	}

@@ -1,0 +1,96 @@
+//go:build darwin
+
+package serve
+
+import (
+	"context"
+	"fmt"
+	"net"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strconv"
+	"testing"
+	"time"
+
+	"gd/internal/rclone"
+)
+
+// TestLiveLocalMount is the macOS round-trip the roadmap item promised: an
+// rclone rcd with a throwaway config, a local-fs remote, and that remote
+// mounted through rclone nfsmount (no macFUSE), with one file written and
+// read back through the mount. It needs no Google accounts: CI runs it on
+// every push, and GD_LIVE_SMOKE=1 gates local runs.
+func TestLiveLocalMount(t *testing.T) {
+	if os.Getenv("GD_LIVE_SMOKE") != "1" {
+		t.Skip("set GD_LIVE_SMOKE=1 to run the live nfsmount round-trip")
+	}
+	m, err := rclone.New()
+	if err != nil {
+		t.Fatalf("rclone: %v", err)
+	}
+	if !m.Installed() {
+		t.Skip("rclone not installed; CI installs it with brew")
+	}
+
+	// Throwaway config with one local-fs remote named smokelocal.
+	dir := t.TempDir()
+	src := filepath.Join(dir, "src")
+	if err := os.MkdirAll(src, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	conf := filepath.Join(dir, "rclone.conf")
+	if err := os.WriteFile(conf, []byte("[smokelocal]\ntype = local\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	// rcd on a free port, bound to the throwaway config.
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	port := ln.Addr().(*net.TCPAddr).Port
+	_ = ln.Close()
+	pass := "smokepass"
+	rcd := exec.Command(m.BinPath, "rcd",
+		"--rc-addr", "127.0.0.1:"+strconv.Itoa(port),
+		"--rc-user", "smoke", "--rc-pass", pass,
+		"--config", conf)
+	rcd.SysProcAttr = detachAttr()
+	if err := rcd.Start(); err != nil {
+		t.Fatalf("rcd: %v", err)
+	}
+	defer func() { _ = rcd.Process.Kill() }()
+
+	sm, err := rclone.New()
+	if err != nil {
+		t.Fatalf("rclone: %v", err)
+	}
+	sm.SetAuth("smoke", pass)
+	deadline := time.Now().Add(20 * time.Second)
+	for !sm.RCAlive() {
+		if time.Now().After(deadline) {
+			t.Fatal("rcd did not come up")
+		}
+		time.Sleep(200 * time.Millisecond)
+	}
+
+	// The round-trip: nfsmount, write, read back, unmount.
+	mp := filepath.Join(dir, "mnt")
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+	if err := sm.MountRemote(ctx, "smokelocal:"+src, mp, "gd-smoke"); err != nil {
+		t.Fatalf("nfsmount: %v", err)
+	}
+	defer func() { _ = sm.UnmountRemote(context.Background(), mp) }()
+
+	probe := filepath.Join(mp, "probe.txt")
+	if err := os.WriteFile(probe, []byte("onlydrive smoke"), 0o644); err != nil {
+		t.Fatalf("write through mount: %v", err)
+	}
+	got, err := os.ReadFile(probe)
+	if err != nil || string(got) != "onlydrive smoke" {
+		t.Fatalf("read back: %v %q", err, got)
+	}
+	fmt.Println("nfsmount round-trip ok at", mp)
+}

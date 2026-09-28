@@ -119,6 +119,143 @@ func credsFile() (string, error) {
 	return filepath.Join(dir, "gd-serve.creds"), nil
 }
 
+// webdavPidFile is where serve stores the webdav process id. S3 and webdav
+// run as separate rclone processes, so they get separate pid files.
+func webdavPidFile() (string, error) {
+	dir, _, _, _, err := config.Paths()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, "gd-webdav.pid"), nil
+}
+
+// webdavAddrFile stores the listen address so status can print it.
+func webdavAddrFile() (string, error) {
+	dir, _, _, _, err := config.Paths()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, "gd-webdav.addr"), nil
+}
+
+// webdavAlive reports whether the webdav serve process is running.
+func webdavAlive() bool {
+	pf, err := webdavPidFile()
+	if err != nil {
+		return false
+	}
+	data, err := os.ReadFile(pf)
+	if err != nil {
+		return false
+	}
+	pid, err := strconv.Atoi(strings.TrimSpace(string(data)))
+	if err != nil {
+		return false
+	}
+	return pidAliveCheck(pid)
+}
+
+// WebDAVStart launches `rclone serve webdav <remote>` in the background on
+// 127.0.0.1. The pool (or a single account remote) then mounts on macOS
+// and Linux with stock WebDAV clients: no WinFsp-class driver needed.
+func WebDAVStart(remote string, port int) (string, error) {
+	if webdavAlive() {
+		return "", fmt.Errorf("serve webdav already running (see: gd serve status)")
+	}
+	if err := daemon.EnsureDaemon(); err != nil {
+		_ = err // serve webdav talks to remotes directly, not through the RC API
+	}
+	if len(strings.Split(remote, ":")) < 2 {
+		remote += ":"
+	}
+	m, err := rclone.New()
+	if err != nil {
+		return "", err
+	}
+	if !m.Installed() {
+		return "", fmt.Errorf("rclone not installed; run: gd setup")
+	}
+	dir, _, _, _, _ := config.Paths()
+	logf := filepath.Join(dir, "serve-webdav.log")
+	addr := fmt.Sprintf("127.0.0.1:%d", port)
+	args := []string{
+		"serve", "webdav", remote,
+		"--addr", addr,
+		"--config", daemon.ConfPath(),
+		"--log-file", logf,
+		"--log-level", "INFO",
+	}
+	cmd := exec.Command(m.BinPath, args...)
+	cmd.SysProcAttr = detachAttr()
+	cmd.Dir = dir
+	if err := cmd.Start(); err != nil {
+		return "", fmt.Errorf("start serve webdav: %w", err)
+	}
+	pf, err := webdavPidFile()
+	if err != nil {
+		return "", err
+	}
+	_ = os.WriteFile(pf, []byte(strconv.Itoa(cmd.Process.Pid)), 0o600)
+	_ = os.WriteFile(mustAddrFile(), []byte(addr+"\n"+remote+"\n"), 0o600)
+
+	// wait until the port answers
+	ok := false
+	deadline := time.Now().Add(20 * time.Second)
+	for time.Now().Before(deadline) {
+		c, e := net.DialTimeout("tcp", addr, 500*time.Millisecond)
+		if e == nil {
+			_ = c.Close()
+			ok = true
+			break
+		}
+		time.Sleep(300 * time.Millisecond)
+	}
+	if !ok {
+		return "", fmt.Errorf("serve webdav did not become ready; log: %s", logf)
+	}
+	return "WebDAV on http://" + addr + " (remote " + remote + ")", nil
+}
+
+// mustAddrFile is webdavAddrFile ignoring the path error (best-effort write).
+func mustAddrFile() string {
+	p, _ := webdavAddrFile()
+	return p
+}
+
+// WebDAVStop stops the webdav serve process.
+func WebDAVStop() error {
+	pf, err := webdavPidFile()
+	if err != nil {
+		return err
+	}
+	data, err := os.ReadFile(pf)
+	if err != nil {
+		return fmt.Errorf("serve webdav is not running")
+	}
+	if pid, err := strconv.Atoi(strings.TrimSpace(string(data))); err == nil {
+		killPID(pid)
+	}
+	_ = os.Remove(pf)
+	_ = os.Remove(mustAddrFile())
+	return nil
+}
+
+// WebDAVStatus returns whether the webdav endpoint is up and its address.
+func WebDAVStatus() (bool, string) {
+	if !webdavAlive() {
+		return false, ""
+	}
+	data, err := os.ReadFile(mustAddrFile())
+	if err != nil {
+		return true, ""
+	}
+	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
+	if len(lines) >= 1 {
+		return true, lines[0]
+	}
+	return true, ""
+}
+
 // S3Start launches `rclone serve s3 <remote>` in the background.
 // remote is an rclone remote spec like "gd-union:" or "gdrive-acc1:".
 func S3Start(remote string, port int) (accessKey, secretKey string, msg string, err error) {

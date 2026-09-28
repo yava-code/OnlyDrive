@@ -34,7 +34,8 @@ Usage:
   gd mount [acc|union] [--path sub]  mount as a disk (auto letter)
   gd unmount [acc]             unmount account's disk
   gd serve union               one storage pool over ALL accounts
-  gd serve s3 [remote] [--port 9000]  S3-compatible API for your projects
+  gd serve s3 [remote] [--port 9000]      S3-compatible API for your projects
+  gd serve webdav [remote] [--port 9864]  WebDAV endpoint: mount the pool on macOS/Linux
   gd serve status|stop         inspect/stop the S3 server
   gd autostart on|off          start daemon+mounts at logon
   gd status                    daemon + mounts overview
@@ -257,6 +258,7 @@ func cmdWizard() error {
 	fmt.Println()
 	fmt.Println("Useful next:")
 	fmt.Println("  gd serve s3   , S3-compatible endpoint for your projects")
+	fmt.Println("  gd serve webdav, WebDAV endpoint: mount the pool on macOS/Linux")
 	fmt.Println("  gd mcp prompt , ready-made prompt for any LLM agent")
 	fmt.Println("  gd ui         , browser control panel")
 	fmt.Println("  gd status     , what is currently connected")

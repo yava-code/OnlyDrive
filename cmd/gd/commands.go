@@ -401,24 +401,69 @@ func cmdServe(rest []string) error {
 		fmt.Println("point any S3 client (aws cli, s3cmd, MinIO client) at this endpoint.")
 		fmt.Println("each account is visible as a bucket named like the drive root.")
 		return nil
-	case "status":
-		running, acc, sec, addr := serve.S3Status()
-		if !running {
-			fmt.Println("serve s3: stopped (run: gd serve s3)")
-			return nil
+	case "webdav":
+		args := rest[1:]
+		remote := "gd-union"
+		port := 9864
+		for i := 0; i < len(args); i++ {
+			if args[i] == "--port" && i+1 < len(args) {
+				i++
+				if p, err := strconv.Atoi(args[i]); err == nil {
+					port = p
+				}
+				continue
+			}
+			remote = args[i]
 		}
-		fmt.Println("serve s3: running on", addr)
-		fmt.Println("  access_key:", acc)
-		fmt.Println("  secret_key:", sec)
-		return nil
-	case "stop":
-		if err := serve.S3Stop(); err != nil {
+		if remote == "gd-union" {
+			if _, err := serve.EnsureUnion(); err != nil {
+				return err
+			}
+		}
+		msg, err := serve.WebDAVStart(remote, port)
+		if err != nil {
 			return err
 		}
-		fmt.Println("serve s3 stopped")
+		fmt.Println(msg)
+		fmt.Println("mount it as a disk with any WebDAV client:")
+		fmt.Println("  macOS:  mkdir ~/pool && mount_webdav -S http://127.0.0.1:" + strconv.Itoa(port) + " ~/pool")
+		fmt.Println("  linux:  mount -t davfs http://127.0.0.1:" + strconv.Itoa(port) + "/ /mnt/pool")
+		fmt.Println("  windows is already covered by gd mount (WinFsp)")
+		return nil
+	case "status":
+		running, acc, sec, addr := serve.S3Status()
+		if running {
+			fmt.Println("serve s3: running on", addr)
+			fmt.Println("  access_key:", acc)
+			fmt.Println("  secret_key:", sec)
+		} else {
+			fmt.Println("serve s3: stopped (run: gd serve s3)")
+		}
+		davUp, davAddr := serve.WebDAVStatus()
+		if davUp {
+			fmt.Println("serve webdav: running on", davAddr)
+		} else {
+			fmt.Println("serve webdav: stopped (run: gd serve webdav)")
+		}
+		return nil
+	case "stop":
+		var errs []string
+		if err := serve.S3Stop(); err != nil {
+			errs = append(errs, "s3: "+err.Error())
+		} else {
+			fmt.Println("serve s3 stopped")
+		}
+		if err := serve.WebDAVStop(); err != nil {
+			errs = append(errs, "webdav: "+err.Error())
+		} else {
+			fmt.Println("serve webdav stopped")
+		}
+		if len(errs) == 2 {
+			return fmt.Errorf("nothing to stop (%s)", strings.Join(errs, "; "))
+		}
 		return nil
 	default:
-		return fmt.Errorf("usage: gd serve union|s3 [remote] [--port N]|status|stop")
+		return fmt.Errorf("usage: gd serve union|s3|webdav [remote] [--port N]|status|stop")
 	}
 }
 

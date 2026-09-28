@@ -1,15 +1,15 @@
 <div align="center">
-  <img src="docs/img/logo.png" alt="OnlyDrive logo" width="480">
+  <img src="docs/img/logo.png" alt="OnlyDrive" width="480">
+  <p><strong>Google Drive as a local disk, S3/WebDAV endpoint and MCP server, in one command.</strong></p>
 </div>
 
-# gd: Google Drive as a local disk + MCP, in one command
-
-`gd` is a single exe that turns Google Drive (a regular Google One or
-Workspace subscription, **no Google Cloud and no API keys**) into:
+OnlyDrive is a single exe (the command is `gd`) that turns Google Drive (a
+regular Google One or Workspace subscription, **no Google Cloud and no API
+keys**) into:
 
 1. **A local Windows disk**: Drive folders show up in Explorer as `GDrive-acc1 (X:)`
 2. **An MCP server**: Claude Desktop, Cursor, Claude Code, Windsurf and VS Code work with the disk through the `gd_*` tools
-3. **An S3-compatible API**: `gd serve s3` exposes the drive pool as an S3 endpoint for your projects
+3. **An S3-compatible API and a WebDAV endpoint**: `gd serve s3` for your projects, `gd serve webdav` to mount the pool on macOS and Linux without any FSD driver
 
 Inside is the official rclone (downloaded automatically, verified by SHA-256).
 You never see or configure rclone.
@@ -43,6 +43,7 @@ gd mount        :: the disk appears in Explorer
 gd mcp install claude-desktop   :: or cursor / claude-code / windsurf / vscode
 gd doctor       :: check that everything is OK
 gd serve s3     :: (optional) S3 endpoint for projects
+gd serve webdav :: (optional) WebDAV endpoint, mounts the pool on macOS/Linux
 gd autostart on :: (optional) disks and daemon come up at login
 gd ui           :: browser control panel (see below)
 ```
@@ -102,7 +103,8 @@ header.
 | `gd unmount [acc]` | unmount |
 | `gd serve union` | union remote over ALL accounts (one pool) |
 | `gd serve s3 [remote] [--port N]` | S3-compatible API (see below) |
-| `gd serve status\|stop` | status/stop of the S3 server |
+| `gd serve webdav [remote] [--port N]` | WebDAV endpoint over the pool; mount it on macOS/Linux with stock clients |
+| `gd serve status\|stop` | status/stop of both servers |
 | `gd autostart on\|off` | start daemon and disks at login |
 | `gd status` | daemon, accounts, mounts |
 | `gd quota [acc]` | used/total |
@@ -131,6 +133,32 @@ once (letters are picked automatically). `gd serve union` folds every
 account into one storage pool: a file lands on the drive that has room.
 With a single account the pool repeats that one upstream, because rclone's
 union rejects a lone upstream.
+
+## WebDAV: mounting the pool on macOS and Linux
+
+```bat
+gd serve webdav            :: WebDAV on 127.0.0.1:9864 over the union pool
+```
+
+Then mount with the OS client:
+
+```bash
+# macOS
+mkdir -p ~/pool && mount_webdav -S http://127.0.0.1:9864/ ~/pool
+# Linux (davfs2)
+sudo mount -t davfs http://127.0.0.1:9864/ /mnt/pool
+```
+
+Windows does not need this path: `gd mount` gives real drive letters
+through WinFsp. The CI runs a live `rclone nfsmount` round-trip on macOS
+(the same backend this uses) on every push.
+
+## Versioning
+
+The release version lives in exactly one place: `internal/version`
+(`Number` constant). A release bumps that constant and tags the same
+`vX.Y.Z`; the landing page and panel footer repeat the string manually at
+release time.
 
 ## Autostart
 
@@ -164,8 +192,10 @@ lets you disable an entry without deleting it.
 - [x] S3-compatible server + union pool
 - [x] autostart at login, re-mount after reboot (schtasks + Run-key fallback)
 - [x] browser control panel (`gd ui`, `gd-ui.exe`)
-- [ ] macOS (`rclone nfsmount`, no macFUSE needed): code exists, smoke tests pending
-- [ ] `gd serve webdav`
+- [x] tray icon with Pause disks / Resume / Quit (Windows)
+- [x] `gd serve webdav`: mount the pool on macOS/Linux with stock WebDAV clients
+- [x] macOS mount round-trip (`rclone nfsmount`, no macFUSE needed): CI smoke test
+- [ ] native macOS mounting with drive letters in Finder (beyond the WebDAV path)
 - [ ] own Google client_id option (shared one retires in 2026)
 - [ ] one-liner releases via goreleaser (config in `.goreleaser.yaml`)
 

@@ -1,6 +1,6 @@
 # gd installer (Windows), one line:
 #   irm https://raw.githubusercontent.com/yava-code/OnlyDrive/main/install/install.ps1 | iex
-# Env overrides: GD_REPO=user/repo  GD_VERSION=v0.1.1
+# Env overrides: GD_REPO=user/repo  GD_VERSION=v0.1.2
 $ErrorActionPreference = 'Stop'
 
 $repo = if ($env:GD_REPO) { $env:GD_REPO } else { 'yava-code/OnlyDrive' }
@@ -27,7 +27,7 @@ if ($ver -eq 'latest') {
     Fail "cannot reach GitHub releases for '$repo' ($($_.Exception.Message)). If the repo is not published yet, build from source (see below)."
   }
 }
-$url = "$base/download/$ver/gd-windows-amd64.exe"
+$url = "$base/download/$ver/OnlyDrive-windows-amd64.exe"
 
 $dir = if ($env:GD_HOME) { "$env:GD_HOME\bin" } else { "$env:LOCALAPPDATA\gd\bin" }
 New-Item -ItemType Directory -Force -Path $dir | Out-Null
@@ -39,7 +39,7 @@ try {
 }
 
 # gd-ui is optional but expected: autostart uses it in tray mode.
-$uiUrl = "$base/download/$ver/gd-ui-windows-amd64.exe"
+$uiUrl = "$base/download/$ver/OnlyDrive-ui-windows-amd64.exe"
 Write-Host "downloading gd-ui $ver -> $dir\gd-ui.exe"
 try {
   Invoke-WebRequest -Uri $uiUrl -OutFile "$dir\gd-ui.exe" -UserAgent 'gd-installer' -TimeoutSec 300
