@@ -74,6 +74,19 @@ func Run(ctx context.Context, fix bool) ([]Check, error) {
 		checks = append(checks, Check{"accounts", true, detail})
 	}
 
+	// own Google OAuth client: rclone's shared client_id retires during 2026,
+	// so accounts still minting/refreshing tokens through it will break. With
+	// no accounts there is nothing to break yet.
+	if len(cfg.Accounts) > 0 {
+		if _, _, source, err := config.ResolveOAuthClient(); err == nil && source != "" {
+			checks = append(checks, Check{"oauth", true, "own Google client_id in use (" + source + ")"})
+		} else {
+			checks = append(checks, Check{"oauth", false,
+				"shared rclone client_id stops working during 2026; run: gd oauth set <id> <secret>" +
+					" (https://rclone.org/drive/#making-your-own-client-id)"})
+		}
+	}
+
 	// rclone.conf presence
 	_, rcloneConf, _, _, err := config.Paths()
 	if err != nil {
