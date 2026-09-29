@@ -42,6 +42,9 @@ Usage:
   gd quota [acc]               storage usage for an account
   gd share <path> [acc]        create a public link for a file
   gd reauth <acc>              refresh OAuth for an account
+  gd oauth set <id> <secret>   store your own Google OAuth client (the shared
+                               rclone one retires during 2026)
+  gd oauth show|clear          inspect/remove the stored client
   gd mcp                       run MCP server (stdio), for AI agents
   gd mcp install <client>      register MCP in claude-desktop|claude-code|cursor|windsurf|vscode
   gd mcp prompt [file]         write AGENTS.md-style instructions for LLM agents
@@ -91,6 +94,8 @@ func main() {
 		err = cmdShare(rest)
 	case "reauth":
 		err = cmdReauth(rest)
+	case "oauth":
+		err = cmdOAuth(rest)
 	case "mcp":
 		err = cmdMCP(rest)
 	case "doctor":
@@ -187,6 +192,16 @@ func cmdWizard() error {
 	} else {
 		fmt.Println("[2/4] Connect your Google account(s).")
 		fmt.Println("      A browser window will open, sign in and click Allow.")
+		// Own OAuth client is optional but recommended: rclone's shared
+		// client_id retires during 2026. Enter = skip, y = collect the pair
+		// now so the very first `add` already runs with it.
+		if askYN("      Use your own Google client_id? (recommended)", false) {
+			oid := ask("      client_id", "")
+			osec := ask("      client_secret", "")
+			if err := saveOAuthPair(oid, osec); err != nil {
+				return err
+			}
+		}
 		nStr := ask("      How many Google accounts to connect?", "1")
 		n, convErr := strconv.Atoi(nStr)
 		if convErr != nil || n < 1 {
