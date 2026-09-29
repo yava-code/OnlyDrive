@@ -81,12 +81,6 @@ func saveOAuthPair(id, secret string) error {
 	return nil
 }
 
-// maskSecret keeps the CLI-facing name; the logic lives in config next to
-// the OAuth client it masks, so the panel can reuse it.
-func maskSecret(s string) string {
-	return config.MaskSecret(s)
-}
-
 func oauthShow() error {
 	id, secret, source, err := config.ResolveOAuthClient()
 	if err != nil {
@@ -107,7 +101,7 @@ func oauthShow() error {
 		return nil
 	}
 	fmt.Println("client_id:", id)
-	fmt.Println("secret:   ", maskSecret(secret))
+	fmt.Println("secret:   ", config.MaskSecret(secret))
 	return nil
 }
 

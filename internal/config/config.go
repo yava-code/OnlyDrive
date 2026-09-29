@@ -195,13 +195,6 @@ func NextFreeLetter() (string, error) {
 	return "", fmt.Errorf("no free drive letter found")
 }
 
-// WriteRcloneRemote writes/updates the [remote] section in rclone.conf.
-// It is a thin wrapper over WriteRcloneRemoteWithApp with no OAuth client
-// override, keeping the original call sites untouched.
-func WriteRcloneRemote(remote, tokenJSON, rootFolderID string) error {
-	return WriteRcloneRemoteWithApp(remote, tokenJSON, rootFolderID, "", "")
-}
-
 // WriteRcloneRemoteWithApp writes/updates the [remote] section in rclone.conf.
 // When clientID and clientSecret are both non-empty they are stored alongside
 // the token, so the daemon refreshes that remote's tokens against the user's

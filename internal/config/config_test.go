@@ -85,10 +85,10 @@ func TestAccountByNameAndRemove(t *testing.T) {
 
 func TestWriteAndDeleteRcloneRemote(t *testing.T) {
 	withTempHome(t)
-	if err := WriteRcloneRemote("gdrive-acc1", `{"access_token":"x"}`, ""); err != nil {
+	if err := WriteRcloneRemoteWithApp("gdrive-acc1", `{"access_token":"x"}`, "", "", ""); err != nil {
 		t.Fatal(err)
 	}
-	if err := WriteRcloneRemote("gdrive-acc2", `{"access_token":"y"}`, ""); err != nil {
+	if err := WriteRcloneRemoteWithApp("gdrive-acc2", `{"access_token":"y"}`, "", "", ""); err != nil {
 		t.Fatal(err)
 	}
 	remotes, err := ListRcloneRemotes()
@@ -99,7 +99,7 @@ func TestWriteAndDeleteRcloneRemote(t *testing.T) {
 		t.Fatalf("unexpected remotes %v", remotes)
 	}
 	// overwrite keeps a single section
-	if err := WriteRcloneRemote("gdrive-acc1", `{"access_token":"z"}`, ""); err != nil {
+	if err := WriteRcloneRemoteWithApp("gdrive-acc1", `{"access_token":"z"}`, "", "", ""); err != nil {
 		t.Fatal(err)
 	}
 	remotes, _ = ListRcloneRemotes()
@@ -141,7 +141,7 @@ func contains(s, sub string) bool {
 
 func TestTokenForRemote(t *testing.T) {
 	withTempHome(t)
-	if err := WriteRcloneRemote("gdrive-t", `{"access_token":"tok1","refresh_token":"r1"}`, ""); err != nil {
+	if err := WriteRcloneRemoteWithApp("gdrive-t", `{"access_token":"tok1","refresh_token":"r1"}`, "", "", ""); err != nil {
 		t.Fatal(err)
 	}
 	tok, err := TokenForRemote("gdrive-t")
@@ -213,8 +213,8 @@ func TestWriteRcloneRemoteWithApp(t *testing.T) {
 	if got := strings.Count(string(data), "client_id = "); got != 1 {
 		t.Fatalf("expected 1 client_id line after rewrite, got %d:\n%s", got, string(data))
 	}
-	// Without credentials: the plain wrapper keeps writing a bare section.
-	if err := WriteRcloneRemote("gdrive-u", `{"access_token":"t3"}`, ""); err != nil {
+	// Without credentials: a bare section, exactly the pre-OAuth format.
+	if err := WriteRcloneRemoteWithApp("gdrive-u", `{"access_token":"t3"}`, "", "", ""); err != nil {
 		t.Fatal(err)
 	}
 	data, _ = os.ReadFile(mustRcloneConf(t))
