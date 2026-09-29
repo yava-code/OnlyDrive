@@ -170,6 +170,13 @@ func (s *Server) handleState(w http.ResponseWriter, r *http.Request) {
 	st.S3SecretKey = s3Secret
 	st.WebDAVRunning, st.WebDAVAddr = serve.WebDAVStatus()
 
+	// OAuth client status for the accounts card: which client mints and
+	// refreshes tokens. Only a masked hint of the client_id ever leaves.
+	if id, _, _, err := config.ResolveOAuthClient(); err == nil && id != "" {
+		st.OAuth.Own = true
+		st.OAuth.ClientIDHint = config.MaskSecret(id)
+	}
+
 	if daemon.Running() {
 		if m, err := manager(); err == nil {
 			ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
@@ -204,12 +211,19 @@ func (s *Server) handleState(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, st)
 }
 
+// oauthView tells the dashboard which Google OAuth client is in effect.
+type oauthView struct {
+	Own          bool   `json:"own"`
+	ClientIDHint string `json:"client_id_hint,omitempty"`
+}
+
 // statePayload is the GET /api/state response.
 type statePayload struct {
 	DaemonRunning bool           `json:"daemon_running"`
 	Accounts      []accountView  `json:"accounts"`
 	Mounts        []config.Mount `json:"mounts"`
 	ActiveMounts  []string       `json:"active_mounts"`
+	OAuth         oauthView      `json:"oauth"`
 	S3Running     bool           `json:"s3_running"`
 	S3Addr        string         `json:"s3_addr,omitempty"`
 	S3AccessKey   string         `json:"s3_access_key,omitempty"`

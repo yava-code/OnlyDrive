@@ -254,6 +254,19 @@ func WriteRcloneRemoteWithApp(remote, tokenJSON, rootFolderID, clientID, clientS
 	return os.WriteFile(rcloneConf, []byte(b.String()), 0o600)
 }
 
+// MaskSecret renders a secret safe to display: first four characters,
+// ellipsis, last four. Short secrets collapse to asterisks only; empty
+// input reads as "(not set)".
+func MaskSecret(s string) string {
+	if s == "" {
+		return "(not set)"
+	}
+	if len(s) <= 8 {
+		return strings.Repeat("*", len(s))
+	}
+	return s[:4] + "…" + s[len(s)-4:]
+}
+
 // ResolveOAuthClient returns the Google OAuth client credentials gd should
 // use for authorize flows and token refreshes. Priority: GD_CLIENT_ID and
 // GD_CLIENT_SECRET environment variables (CI, headless), then the value

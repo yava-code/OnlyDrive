@@ -81,16 +81,10 @@ func saveOAuthPair(id, secret string) error {
 	return nil
 }
 
-// maskSecret shows enough of a secret to tell two apart, not enough to leak:
-// first characters, ellipsis, last four.
+// maskSecret keeps the CLI-facing name; the logic lives in config next to
+// the OAuth client it masks, so the panel can reuse it.
 func maskSecret(s string) string {
-	if s == "" {
-		return "(not set)"
-	}
-	if len(s) <= 8 {
-		return strings.Repeat("*", len(s))
-	}
-	return s[:4] + "…" + s[len(s)-4:]
+	return config.MaskSecret(s)
 }
 
 func oauthShow() error {

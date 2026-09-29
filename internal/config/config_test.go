@@ -156,6 +156,23 @@ func TestTokenForRemote(t *testing.T) {
 	}
 }
 
+func TestMaskSecret(t *testing.T) {
+	cases := []struct {
+		in, want string
+	}{
+		{"", "(not set)"},
+		// <= 8 chars: only asterisks, no leak of length-adjacent hints.
+		{"short", "*****"},
+		// > 8: first 4, ellipsis, last 4.
+		{"GOCSPX-1234567890abcdefg", "GOCS…defg"},
+	}
+	for _, c := range cases {
+		if got := MaskSecret(c.in); got != c.want {
+			t.Errorf("MaskSecret(%q) = %q, want %q", c.in, got, c.want)
+		}
+	}
+}
+
 func TestEmailFromToken(t *testing.T) {
 	email := EmailFromToken(`{"access_token":"a","email":"me@gmail.com"}`)
 	if email != "me@gmail.com" {

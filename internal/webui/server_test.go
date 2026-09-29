@@ -8,6 +8,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"gd/internal/config"
 )
 
 func testServer(t *testing.T, token string) *Server {
@@ -41,6 +43,59 @@ func TestStateEndpointEmpty(t *testing.T) {
 	// Empty environment: empty state must be valid JSON with no accounts.
 	if len(st.Accounts) != 0 {
 		t.Fatalf("expected 0 accounts, got %d", len(st.Accounts))
+	}
+	// No stored OAuth client: the panel must show the shared client, no hint.
+	if st.OAuth.Own {
+		t.Fatalf("expected oauth.own=false, got %+v", st.OAuth)
+	}
+	if st.OAuth.ClientIDHint != "" {
+		t.Fatalf("expected empty oauth.client_id_hint, got %q", st.OAuth.ClientIDHint)
+	}
+}
+
+func TestStateOAuthOwnClient(t *testing.T) {
+	s := testServer(t, "")
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.OAuthApp = &config.OAuthApp{ClientID: "panel-id-1234.apps.googleusercontent.com", ClientSecret: "panel-secret-5678"}
+	if err := cfg.Save(); err != nil {
+		t.Fatal(err)
+	}
+	srv := httptest.NewServer(s.Handler())
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/api/state")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	var st statePayload
+	if err := json.NewDecoder(resp.Body).Decode(&st); err != nil {
+		t.Fatal(err)
+	}
+	if !st.OAuth.Own {
+		t.Fatalf("expected oauth.own=true, got %+v", st.OAuth)
+	}
+	// Only a masked hint may reach the page: enough to recognize, not to leak.
+	if st.OAuth.ClientIDHint != "pane….com" {
+		t.Fatalf("expected masked hint, got %q", st.OAuth.ClientIDHint)
+	}
+	if strings.Contains(st.OAuth.ClientIDHint, "panel-secret") {
+		t.Fatal("secret leaked into oauth.client_id_hint")
+	}
+	// The full page must carry the status line element and i18n strings.
+	resp2, err := http.Get(srv.URL + "/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp2.Body.Close()
+	page, _ := io.ReadAll(resp2.Body)
+	for _, want := range []string{"oauth-line", "oauth_own", "oauth_shared"} {
+		if !strings.Contains(string(page), want) {
+			t.Fatalf("index page missing %q", want)
+		}
 	}
 }
 

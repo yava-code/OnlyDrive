@@ -263,6 +263,7 @@ const indexHTML = `<!doctype html>
       <button class="btn primary" id="btn-add" type="button" data-i18n="add_account">+ Add Google account</button>
     </div>
     <div class="card">
+      <div id="oauth-line" class="empty" style="display:none;border-bottom:1px solid var(--line);padding:10px 14px;font-size:13px;color:var(--ink-soft)"></div>
       <div id="accounts" class="empty" data-i18n="loading">loading…</div>
     </div>
   </section>
@@ -384,6 +385,8 @@ const indexHTML = `<!doctype html>
       mounted: "mounted", not_mounted: "not mounted",
       used: " used", unavailable: "unavailable",
       mount: "Mount", unmount: "Unmount", remove: "Remove",
+      oauth_own: "own Google client_id", oauth_shared: "shared rclone client_id (retires 2026)",
+      oauth_hint: "set yours: gd oauth set <id> <secret>",
       empty_accounts: 'No accounts yet. Click "Add Google account" and allow access in the browser.',
       load_failed: "failed to load state: ",
       doctor_check: "doctor --check", doctor_fix: "doctor --fix (repair mode)",
@@ -407,6 +410,8 @@ const indexHTML = `<!doctype html>
       mounted: "смонтирован", not_mounted: "не смонтирован",
       used: " занято", unavailable: "недоступно",
       mount: "Смонтировать", unmount: "Отключить", remove: "Удалить",
+      oauth_own: "свой Google client_id", oauth_shared: "общий rclone client_id (отзывают в 2026)",
+      oauth_hint: "задать свой: gd oauth set <id> <secret>",
       empty_accounts: 'Аккаунтов пока нет. Нажмите "Добавить аккаунт Google" и разрешите доступ в браузере.',
       load_failed: "не удалось загрузить состояние: ",
       doctor_check: "doctor --check", doctor_fix: "doctor --fix (режим исправления)",
@@ -541,6 +546,16 @@ const indexHTML = `<!doctype html>
 
     var el = document.getElementById("accounts");
     el.className = "";
+
+    // OAuth client line: which client mints and refreshes the tokens.
+    var oline = document.getElementById("oauth-line");
+    oline.style.display = "";
+    if (st.oauth && st.oauth.own) {
+      oline.textContent = t("oauth_own") + (st.oauth.client_id_hint ? " · " + st.oauth.client_id_hint : "");
+    } else {
+      oline.textContent = t("oauth_shared") + " · " + t("oauth_hint");
+    }
+
     if (!st.accounts || st.accounts.length === 0) {
       el.className = "empty";
       el.textContent = t("empty_accounts");
