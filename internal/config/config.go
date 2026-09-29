@@ -29,6 +29,15 @@ const AppName = "gd"
 // RcloneRCPort is the fixed port for the rclone RC daemon.
 const RcloneRCPort = 5572
 
+// OAuthApp holds the user's own Google OAuth client credentials.
+// When set, gd uses them for every authorize flow instead of rclone's
+// built-in shared client (which rclone retires during 2026). Env vars
+// GD_CLIENT_ID / GD_CLIENT_SECRET take priority for CI and headless runs.
+type OAuthApp struct {
+	ClientID     string `json:"client_id,omitempty"`
+	ClientSecret string `json:"client_secret,omitempty"`
+}
+
 // Account describes one authorized Google Drive account.
 type Account struct {
 	Name     string    `json:"name"`     // short label, e.g. "acc1"
@@ -49,13 +58,14 @@ type Mount struct {
 
 // Config is the persisted gd state.
 type Config struct {
-	Version     string           `json:"version"`
-	Accounts    []Account        `json:"accounts"`
-	Mounts      []Mount          `json:"mounts"`
-	MCPClient   string           `json:"mcp_client,omitempty"` // last MCP client we installed into
-	RCPass      string           `json:"rc_pass,omitempty"`
-	CreatedAt   time.Time        `json:"created_at"`
-	UpdatedAt   time.Time        `json:"updated_at"`
+	Version   string    `json:"version"`
+	Accounts  []Account `json:"accounts"`
+	Mounts    []Mount   `json:"mounts"`
+	MCPClient string    `json:"mcp_client,omitempty"` // last MCP client we installed into
+	RCPass    string    `json:"rc_pass,omitempty"`
+	OAuthApp  *OAuthApp `json:"oauth_app,omitempty"` // user's own Google OAuth client, nil = rclone's built-in
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // Paths returns the resolved gd paths (config dir, rclone.conf, gd.json, bin dir).
@@ -186,7 +196,17 @@ func NextFreeLetter() (string, error) {
 }
 
 // WriteRcloneRemote writes/updates the [remote] section in rclone.conf.
+// It is a thin wrapper over WriteRcloneRemoteWithApp with no OAuth client
+// override, keeping the original call sites untouched.
 func WriteRcloneRemote(remote, tokenJSON, rootFolderID string) error {
+	return WriteRcloneRemoteWithApp(remote, tokenJSON, rootFolderID, "", "")
+}
+
+// WriteRcloneRemoteWithApp writes/updates the [remote] section in rclone.conf.
+// When clientID and clientSecret are both non-empty they are stored alongside
+// the token, so the daemon refreshes that remote's tokens against the user's
+// own Google OAuth client instead of rclone's shared one.
+func WriteRcloneRemoteWithApp(remote, tokenJSON, rootFolderID, clientID, clientSecret string) error {
 	_, rcloneConf, _, _, err := Paths()
 	if err != nil {
 		return err
@@ -223,11 +243,38 @@ func WriteRcloneRemote(remote, tokenJSON, rootFolderID string) error {
 	}
 	b.WriteString("[" + remote + "]\n")
 	b.WriteString("type = drive\n")
+	if clientID != "" && clientSecret != "" {
+		b.WriteString("client_id = " + clientID + "\n")
+		b.WriteString("client_secret = " + clientSecret + "\n")
+	}
 	if rootFolderID != "" {
 		b.WriteString("root_folder_id = " + rootFolderID + "\n")
 	}
 	b.WriteString("token = " + tokenJSON + "\n")
 	return os.WriteFile(rcloneConf, []byte(b.String()), 0o600)
+}
+
+// ResolveOAuthClient returns the Google OAuth client credentials gd should
+// use for authorize flows and token refreshes. Priority: GD_CLIENT_ID and
+// GD_CLIENT_SECRET environment variables (CI, headless), then the value
+// stored in gd.json via `gd oauth set`. Empty id/secret means rclone's
+// built-in shared client. The source is "env", "config" or "".
+func ResolveOAuthClient() (id, secret, source string, err error) {
+	id, secret = os.Getenv("GD_CLIENT_ID"), os.Getenv("GD_CLIENT_SECRET")
+	if id != "" && secret != "" {
+		return strings.TrimSpace(id), strings.TrimSpace(secret), "env", nil
+	}
+	if (id != "") != (secret != "") {
+		return "", "", "", fmt.Errorf("GD_CLIENT_ID and GD_CLIENT_SECRET must be set together")
+	}
+	c, err := Load()
+	if err != nil {
+		return "", "", "", err
+	}
+	if c.OAuthApp != nil && c.OAuthApp.ClientID != "" && c.OAuthApp.ClientSecret != "" {
+		return c.OAuthApp.ClientID, c.OAuthApp.ClientSecret, "config", nil
+	}
+	return "", "", "", nil
 }
 
 // DeleteRcloneRemote removes the [remote] section from rclone.conf.

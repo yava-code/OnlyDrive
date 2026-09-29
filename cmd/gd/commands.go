@@ -40,16 +40,22 @@ func cmdAdd() error {
 		return err
 	}
 	fmt.Println("A browser window will open for Google sign-in…")
-	fmt.Println("(uses rclone's built-in OAuth app, no API keys, no Google Cloud)")
+	clientID, clientSecret, _, err := config.ResolveOAuthClient()
+	if err != nil {
+		return err
+	}
+	if clientID == "" {
+		fmt.Println("(uses rclone's built-in OAuth app, no API keys, no Google Cloud)")
+	}
 	authCtx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
-	tokenJSON, err := m.AuthorizeDrive(authCtx)
+	tokenJSON, err := m.AuthorizeDrive(authCtx, clientID, clientSecret)
 	if err != nil {
 		return err
 	}
 	email := config.EmailFromToken(tokenJSON)
 	acc := cfg.AddAccount(email)
-	if err := config.WriteRcloneRemote(acc.Remote, tokenJSON, ""); err != nil {
+	if err := config.WriteRcloneRemoteWithApp(acc.Remote, tokenJSON, "", clientID, clientSecret); err != nil {
 		return err
 	}
 	if err := cfg.Save(); err != nil {
@@ -168,13 +174,17 @@ func cmdReauth(rest []string) error {
 	if err != nil {
 		return err
 	}
-	authCtx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
-	defer cancel()
-	tokenJSON, err := m.AuthorizeDrive(authCtx)
+	clientID, clientSecret, _, err := config.ResolveOAuthClient()
 	if err != nil {
 		return err
 	}
-	if err := config.WriteRcloneRemote(acc.Remote, tokenJSON, ""); err != nil {
+	authCtx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+	tokenJSON, err := m.AuthorizeDrive(authCtx, clientID, clientSecret)
+	if err != nil {
+		return err
+	}
+	if err := config.WriteRcloneRemoteWithApp(acc.Remote, tokenJSON, "", clientID, clientSecret); err != nil {
 		return err
 	}
 	if strings.EqualFold(acc.Email, "unknown-account") {

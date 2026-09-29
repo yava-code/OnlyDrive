@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -10,6 +11,16 @@ func withTempHome(t *testing.T) {
 	t.Helper()
 	dir := t.TempDir()
 	t.Setenv("GD_HOME", dir)
+}
+
+// mustRcloneConf returns the rclone.conf path inside the temp GD_HOME.
+func mustRcloneConf(t *testing.T) string {
+	t.Helper()
+	_, rcloneConf, _, _, err := Paths()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return rcloneConf
 }
 
 func TestPathsAndLoadSave(t *testing.T) {
@@ -152,5 +163,83 @@ func TestEmailFromToken(t *testing.T) {
 	}
 	if EmailFromToken(`{}`) != "" {
 		t.Fatal("expected empty for token without email")
+	}
+}
+
+func TestWriteRcloneRemoteWithApp(t *testing.T) {
+	withTempHome(t)
+	// With credentials: both lines must land in the section, before token.
+	if err := WriteRcloneRemoteWithApp("gdrive-t", `{"access_token":"t1"}`, "",
+		"my-app.apps.googleusercontent.com", "sekret"); err != nil {
+		t.Fatal(err)
+	}
+	data, err := os.ReadFile(mustRcloneConf(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	content := string(data)
+	for _, want := range []string{
+		"[gdrive-t]", "type = drive",
+		"client_id = my-app.apps.googleusercontent.com", "client_secret = sekret",
+		`token = {"access_token":"t1"}`,
+	} {
+		if !contains(content, want) {
+			t.Fatalf("section missing %q:\n%s", want, content)
+		}
+	}
+	// Rewriting the same remote must not duplicate the client_id line.
+	if err := WriteRcloneRemoteWithApp("gdrive-t", `{"access_token":"t2"}`, "",
+		"my-app.apps.googleusercontent.com", "sekret"); err != nil {
+		t.Fatal(err)
+	}
+	data, _ = os.ReadFile(mustRcloneConf(t))
+	if got := strings.Count(string(data), "client_id = "); got != 1 {
+		t.Fatalf("expected 1 client_id line after rewrite, got %d:\n%s", got, string(data))
+	}
+	// Without credentials: the plain wrapper keeps writing a bare section.
+	if err := WriteRcloneRemote("gdrive-u", `{"access_token":"t3"}`, ""); err != nil {
+		t.Fatal(err)
+	}
+	data, _ = os.ReadFile(mustRcloneConf(t))
+	section := string(data)
+	if i := strings.Index(section, "[gdrive-u]"); i >= 0 {
+		section = section[i:]
+	}
+	if contains(section, "client_id = ") {
+		t.Fatalf("plain WriteRcloneRemote must not write client_id in its section:\n%s", section)
+	}
+}
+
+func TestResolveOAuthClient(t *testing.T) {
+	withTempHome(t)
+	// Fresh install: nothing anywhere, falls back to rclone's built-in client.
+	id, secret, source, err := ResolveOAuthClient()
+	if err != nil || id != "" || secret != "" || source != "" {
+		t.Fatalf("expected empty built-in fallback, got (%q,%q,%q,%v)", id, secret, source, err)
+	}
+	// Stored via `gd oauth set`: resolved with source "config".
+	cfg, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.OAuthApp = &OAuthApp{ClientID: "cfg-id", ClientSecret: "cfg-secret"}
+	if err := cfg.Save(); err != nil {
+		t.Fatal(err)
+	}
+	id, secret, source, err = ResolveOAuthClient()
+	if err != nil || id != "cfg-id" || secret != "cfg-secret" || source != "config" {
+		t.Fatalf("config source: got (%q,%q,%q,%v)", id, secret, source, err)
+	}
+	// Env wins over gd.json for CI/headless machines.
+	t.Setenv("GD_CLIENT_ID", "env-id")
+	t.Setenv("GD_CLIENT_SECRET", "env-secret")
+	id, secret, source, err = ResolveOAuthClient()
+	if err != nil || id != "env-id" || secret != "env-secret" || source != "env" {
+		t.Fatalf("env must win: got (%q,%q,%q,%v)", id, secret, source, err)
+	}
+	// Half-set env is an error, never a silent fallback.
+	os.Unsetenv("GD_CLIENT_SECRET")
+	if _, _, _, err := ResolveOAuthClient(); err == nil {
+		t.Fatal("expected error when only GD_CLIENT_ID is set")
 	}
 }

@@ -17,14 +17,16 @@ import (
 const driveScope = "drive"
 
 // AuthorizeDrive runs `rclone authorize drive` and captures the token JSON blob
-// printed by rclone when the browser flow completes. Uses rclone's built-in
-// public OAuth client — the user never creates API keys or a Google Cloud project.
+// printed by rclone when the browser flow completes. When clientID and
+// clientSecret are both non-empty they are passed to rclone and the token is
+// minted against the user's own Google OAuth client; otherwise rclone's
+// built-in public OAuth client is used (which rclone retires during 2026).
 //
 // Flow: rclone starts a tiny local web server on 127.0.0.1:53682 and prints an
 // auth URL; we surface the URL prominently, try hard to open the user's browser
 // ourselves, and parse the success token blob from output. Any leftover rclone
 // authorize from a previous run that still owns the port is cleaned up first.
-func (m *Manager) AuthorizeDrive(ctx context.Context) (string, error) {
+func (m *Manager) AuthorizeDrive(ctx context.Context, clientID, clientSecret string) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 	defer cancel()
 
@@ -37,7 +39,13 @@ func (m *Manager) AuthorizeDrive(ctx context.Context) (string, error) {
 		}
 	}
 
-	cmd := exec.CommandContext(ctx, m.BinPath, "authorize", driveScope, "--auth-no-open-browser")
+	if clientID != "" && clientSecret != "" {
+		fmt.Println("using your own Google client_id (from gd oauth set / GD_CLIENT_ID)")
+	} else {
+		fmt.Println("using rclone's built-in OAuth app (shared client_id retires during 2026; see: gd oauth set)")
+	}
+
+	cmd := exec.CommandContext(ctx, m.BinPath, authorizeArgs(clientID, clientSecret)...)
 	// rclone prints the auth URL (NOTICE goes to stderr) and waits; we open the
 	// browser ourselves so we capture output live via pipes.
 	stdout, err := cmd.StdoutPipe()
@@ -126,6 +134,18 @@ func (m *Manager) AuthorizeDrive(ctx context.Context) (string, error) {
 		}
 		return "", errors.New("authorize finished without token")
 	}
+}
+
+// authorizeArgs builds the `rclone authorize` command line. With the user's
+// own OAuth client the credentials are passed positionally
+// (`rclone authorize drive <client_id> <client_secret>`); without them the
+// command stays as it always was, on rclone's built-in client.
+func authorizeArgs(clientID, clientSecret string) []string {
+	args := []string{"authorize", driveScope}
+	if clientID != "" && clientSecret != "" {
+		args = append(args, clientID, clientSecret)
+	}
+	return append(args, "--auth-no-open-browser")
 }
 
 // extractURL finds the local auth URL in rclone output.

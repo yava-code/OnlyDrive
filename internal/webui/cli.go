@@ -22,13 +22,17 @@ func addAccount() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	tokenJSON, err := m.AuthorizeDrive(context.Background())
+	clientID, clientSecret, _, err := config.ResolveOAuthClient()
+	if err != nil {
+		return "", err
+	}
+	tokenJSON, err := m.AuthorizeDrive(context.Background(), clientID, clientSecret)
 	if err != nil {
 		return "", err
 	}
 	email := config.EmailFromToken(tokenJSON)
 	acc := cfg.AddAccount(email)
-	if err := config.WriteRcloneRemote(acc.Remote, tokenJSON, ""); err != nil {
+	if err := config.WriteRcloneRemoteWithApp(acc.Remote, tokenJSON, "", clientID, clientSecret); err != nil {
 		return "", err
 	}
 	if err := cfg.Save(); err != nil {
