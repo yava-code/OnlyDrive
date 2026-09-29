@@ -24,6 +24,7 @@ MCP server for file operations.
 ` + "```" + `bat
 gd setup          :: downloads rclone, installs WinFsp (one UAC prompt), checks the environment
 gd add            :: connects a Google account via the browser (OAuth, no API keys)
+gd oauth set      :: store your own Google OAuth client (rclone's shared one retires in 2026)
 gd daemon start   :: starts the background service
 gd mount acc1     :: mounts the account as a disk (letter picked automatically)
 gd mcp install claude-desktop   :: or cursor / claude-code / windsurf / vscode
@@ -61,6 +62,8 @@ through the daemon API. Mount is only needed to see the disk in Explorer.
 - daemon won't start: see ~/.gd/rclone.log, then ` + "`gd doctor`" + `.
 - disk didn't appear: check WinFsp (` + "`gd doctor`" + `), re-run ` + "`gd mount`" + `.
 - OAuth expired: ` + "`gd reauth acc1`" + `.
+- 2026 and later: when rclone retires its shared client_id, store your own
+  with ` + "`gd oauth set <id> <secret>`" + ` and re-auth each account.
 `)
 	return b.String()
 }

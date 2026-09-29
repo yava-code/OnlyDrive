@@ -98,6 +98,7 @@ header.
 | `gd accounts` | list accounts |
 | `gd remove <acc>` | remove an account |
 | `gd reauth <acc>` | re-authorize an account |
+| `gd oauth set\|show\|clear` | store/inspect/remove your own Google OAuth client (see below) |
 | `gd daemon start\|stop\|status` | manage the background daemon |
 | `gd mount [acc\|union] [--path <sub>]` | mount as a disk (letter picked automatically) |
 | `gd unmount [acc]` | unmount |
@@ -190,14 +191,51 @@ reports which method it used. `gd autostart off` removes both.
 Run-key entries are visible in Task Manager → Startup apps, where Windows
 lets you disable an entry without deleting it.
 
+## Own Google client_id
+
+rclone ships a shared, public Google Drive OAuth client, and rclone is
+retiring it during 2026. Until you store your own client, authorizing new
+accounts and refreshing tokens keeps working, but it will stop one day, so
+plan ahead. It is a one-time, five-minute chore:
+
+1. Open <https://console.cloud.google.com>, create (or reuse) a project.
+2. Enable the **Google Drive API** for it.
+3. Configure the **OAuth consent screen** (External is fine, add yourself as
+   a test user; no sensitive scopes needed, rclone uses plain `drive`).
+4. Create credentials of type **OAuth client ID**, application type
+   **Desktop app**, and copy the client_id and client_secret.
+5. Store them:
+
+```bat
+gd oauth set <client_id> <client_secret>
+```
+
+6. Re-authorize every existing account (a refresh token is bound to the
+   client_id that minted it, so old tokens cannot renew through your new
+   client):
+
+```bat
+gd reauth acc1
+gd reauth acc2
+```
+
+`gd oauth show` reports which client is in effect (with the secret masked),
+`gd oauth clear` forgets the stored pair. In scripts and CI you can skip the
+storage entirely: `GD_CLIENT_ID` and `GD_CLIENT_SECRET` environment variables
+take priority over the stored pair. With 10+ accounts or heavy automated
+uploads Google officially recommends your own client_id anyway (rclone
+documents it at <https://rclone.org/drive/#making-your-own-client-id>), and
+after 2026 it is simply required.
+
 ## Limitations (important)
 
 - Drive is **not a block device**: random writes go through a cache, so
   live databases (SQLite and friends) must not live on a mounted disk.
 - Google upload limit: about 750 GB per day per account.
 - `~/.gd/rclone.conf` holds OAuth tokens. Never commit it or send it anywhere.
-- rclone's shared Drive client_id is being retired during 2026; bringing
-  your own client_id is on the roadmap.
+- rclone's shared Drive client_id is being retired during 2026. Bring your
+  own OAuth client (see [Own Google client_id](#own-google-client_id)) to keep
+  authorizing past that date.
 
 ## Config and data files
 
@@ -216,7 +254,7 @@ lets you disable an entry without deleting it.
 - [x] `gd serve webdav`: mount the pool on macOS/Linux with stock WebDAV clients
 - [x] macOS mount round-trip (`rclone nfsmount`, no macFUSE needed): CI smoke test
 - [ ] native macOS mounting with drive letters in Finder (beyond the WebDAV path)
-- [ ] own Google client_id option (shared one retires in 2026)
+- [x] own Google client_id option (shared one retires in 2026)
 - [ ] one-liner releases via goreleaser (config in `.goreleaser.yaml`)
 
 ## Tests

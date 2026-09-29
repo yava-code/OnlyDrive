@@ -423,7 +423,7 @@ gd doctor         :: is everything ok?</pre>
       <div style="height:24px"></div>
       <details>
         <summary>Do I need a Google Cloud project or API keys?</summary>
-        <p>No. OnlyDrive uses rclone's built-in OAuth client: a browser window opens, you sign in, you click Allow. The token lands in a local config that never leaves the machine. One caveat, stated plainly: rclone retires that shared client_id during 2026, so bringing your own client_id is on the roadmap.</p>
+        <p>No. OnlyDrive uses rclone's built-in OAuth client: a browser window opens, you sign in, you click Allow. The token lands in a local config that never leaves the machine. One caveat, stated plainly: rclone retires that shared client_id during 2026. Bringing your own is supported: <code>gd oauth set &lt;client_id&gt; &lt;client_secret&gt;</code> stores it and <code>gd reauth acc1</code> moves each account over; the shared client keeps working until rclone retires it (2026).</p>
       </details>
       <details>
         <summary>Can I run a database on the mounted disk?</summary>

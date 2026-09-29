@@ -24,6 +24,7 @@ use the commands below.
 go build -o gd.exe ./cmd/gd    :: or download a release
 gd setup                       :: rclone + WinFsp (one UAC click) + environment check
 gd add                         :: browser, Google, Allow (no API keys)
+gd oauth set <id> <secret>     :: own Google OAuth client (shared one retires 2026; then: gd reauth accN)
 gd daemon start                :: background service (RC API on 127.0.0.1:5572)
 gd mount                       :: disk in Explorer (letter picked automatically)
 gd mcp install claude-desktop  :: MCP for agents; also: cursor|claude-code|windsurf|vscode
@@ -106,5 +107,7 @@ which starts the daemon and re-mounts registered disks, then exits.
 - Daemon does not start: check `~/.gd/rclone.log`, then run `gd doctor`
 - Disk did not appear: check WinFsp (`gd doctor`), then `gd unmount && gd mount`
 - Token expired / 401: `gd reauth acc1`
+- 2026 and later: when rclone retires its shared client_id, store your own
+  with `gd oauth set <id> <secret>` and re-auth each account (`gd reauth accN`)
 - Account shows an empty or "unknown-account" email: run `gd accounts`
   twice; the second pass refreshes the token and fills the email in
