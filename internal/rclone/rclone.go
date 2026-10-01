@@ -347,9 +347,11 @@ func (m *Manager) MountProbe() bool {
 }
 
 // MountRemote mounts remote:path at mountpoint (Windows: drive letter "X:",
-// macOS/Linux: a filesystem path). Windows mounts keep the default options
-// (Explorer shows the remote name as the volume label); the macOS NFS backend
-// needs its own parameters, see below.
+// macOS/Linux: a filesystem path). Windows mounts stay bare (Explorer shows
+// the remote name as the volume label; the pinned rclone rejects extra
+// parameters there); the macOS NFS backend needs its own parameters, see
+// below. rclone 1.75's RC takes options as the nested vfsOpt/mountOpt blocks
+// (the flat "flag_name" form arrived later).
 func (m *Manager) MountRemote(ctx context.Context, remote, mountpoint, volName string) error {
 	_ = volName // kept for CLI compatibility
 	in := map[string]any{
@@ -361,9 +363,10 @@ func (m *Manager) MountRemote(ctx context.Context, remote, mountpoint, volName s
 		// refuse `rclone mount` entirely); nfsmount ships in every build and
 		// needs no kernel extension, so pick it explicitly. Writes through an
 		// NFS mount require VFS caching: without a cache mode the mount is
-		// read-only (rclone serve nfs docs), hence vfs-cache-mode.
+		// read-only (rclone serve nfs docs). CacheMode 3 is vfs-cache-mode
+		// full (off=0, minimal=1, writes=2, full=3).
 		in["mountType"] = "nfsmount"
-		in["opt"] = map[string]any{"vfs-cache-mode": "full"}
+		in["vfsOpt"] = map[string]any{"CacheMode": 3}
 	}
 	return m.rcCall(ctx, "mount/mount", in, &map[string]any{})
 }
