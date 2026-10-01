@@ -709,6 +709,35 @@ func cmdDoctor(rest []string) error {
 	if err != nil {
 		return err
 	}
+	bad := printChecks(checks)
+	// With --fix, a failed oauth check means accounts still mint and refresh
+	// tokens through rclone's shared client_id (retiring during 2026). The
+	// real fix is the guided walkthrough: it opens the Console pages, stores
+	// the pair and re-authorizes every account. Offered, not forced: env
+	// vars or a later manual run are valid choices too.
+	if fix && failedCheck(checks, "oauth") {
+		fmt.Println()
+		if askYN("run `gd oauth setup` now (Console walkthrough + re-auth all)?", true) {
+			if err := oauthSetup(nil); err != nil {
+				return err
+			}
+			fmt.Println("\nre-checking after the fix:")
+			checks, err = doctor.Run(ctx, false)
+			if err != nil {
+				return err
+			}
+			bad = printChecks(checks)
+		}
+	}
+	if bad > 0 {
+		fmt.Printf("\n%d problem(s). Run `gd doctor --fix` to auto-fix, or `gd setup`.\n", bad)
+		return &exitError{code: 1}
+	}
+	fmt.Println("\nall good.")
+	return nil
+}
+
+func printChecks(checks []doctor.Check) int {
 	bad := 0
 	for _, c := range checks {
 		mark := "✔"
@@ -718,12 +747,16 @@ func cmdDoctor(rest []string) error {
 		}
 		fmt.Printf(" %s %-12s %s\n", mark, c.Name, c.Detail)
 	}
-	if bad > 0 {
-		fmt.Printf("\n%d problem(s). Run `gd doctor --fix` to auto-fix, or `gd setup`.\n", bad)
-		return &exitError{code: 1}
+	return bad
+}
+
+func failedCheck(checks []doctor.Check, name string) bool {
+	for _, c := range checks {
+		if c.Name == name && !c.OK {
+			return true
+		}
 	}
-	fmt.Println("\nall good.")
-	return nil
+	return false
 }
 
 func cmdUpdate() error {

@@ -49,7 +49,8 @@ Usage:
   gd mcp                       run MCP server (stdio), for AI agents
   gd mcp install <client>      register MCP in claude-desktop|claude-code|cursor|windsurf|vscode
   gd mcp prompt [file]         write AGENTS.md-style instructions for LLM agents
-  gd doctor [--fix]            diagnose environment (and auto-fix missing parts)
+  gd doctor [--fix]            diagnose environment, auto-fix missing parts,
+                               offer the OAuth walkthrough when accounts are on the shared client
   gd ui [--port N]             browser control panel on 127.0.0.1 (default port 5590)
   gd update                    update OnlyDrive itself (SHA-256 verified) and the pinned rclone
   gd version                   print version
