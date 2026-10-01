@@ -346,14 +346,21 @@ func (m *Manager) MountProbe() bool {
 	return true
 }
 
-// MountRemote mounts remote:path at mountpoint (Windows: drive letter "X:").
-// Note: rclone 1.75 RC rejects the "opt"/volname parameter, so we mount bare;
-// Explorer shows the remote name as the volume label.
+// MountRemote mounts remote:path at mountpoint (Windows: drive letter "X:",
+// macOS/Linux: a filesystem path). Note: rclone 1.75 RC rejects the
+// "opt"/volname parameter, so we mount bare; Explorer shows the remote name
+// as the volume label.
 func (m *Manager) MountRemote(ctx context.Context, remote, mountpoint, volName string) error {
 	_ = volName // kept for CLI compatibility
 	in := map[string]any{
 		"fs":         remote,
 		"mountPoint": mountpoint,
+	}
+	if runtime.GOOS == "darwin" {
+		// The default FUSE backend needs macFUSE on macOS (and brew builds
+		// refuse `rclone mount` entirely); nfsmount ships in every build and
+		// needs no kernel extension, so pick it explicitly.
+		in["mountType"] = "nfsmount"
 	}
 	return m.rcCall(ctx, "mount/mount", in, &map[string]any{})
 }
