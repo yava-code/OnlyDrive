@@ -79,8 +79,13 @@ func TestLiveLocalMount(t *testing.T) {
 		time.Sleep(200 * time.Millisecond)
 	}
 
-	// The round-trip: nfsmount, write, read back, unmount.
+	// The round-trip: mount, write, read back, unmount. The FUSE backend on
+	// Linux requires an existing mountpoint (nfsmount on macOS creates one);
+	// real mounts go through config.MountTarget, which MkdirAll's the path.
 	mp := filepath.Join(dir, "mnt")
+	if err := os.MkdirAll(mp, 0o755); err != nil {
+		t.Fatal(err)
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 	if err := sm.MountRemote(ctx, "smokelocal:"+src, mp, "gd-smoke"); err != nil {
