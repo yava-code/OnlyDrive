@@ -12,6 +12,10 @@ package webui
 // identity; mono for figures keeps storage numbers aligned and legible;
 // ink-black is the single accent (status-first tool); hairline borders make
 // sections breathe without cards shouting.
+// versionPlaceholder inside indexHTML is replaced by version.String() at
+// serve time (see indexHTMLBytes in server.go).
+const versionPlaceholder = "__GD_VERSION__"
+
 const indexHTML = `<!doctype html>
 <html lang="en">
 <head>
@@ -352,7 +356,7 @@ const indexHTML = `<!doctype html>
 
 <footer>
   <div class="bar">
-    <span>OnlyDrive <span id="foot-ver">v0.1.3</span></span>
+    <span>OnlyDrive <span id="foot-ver">__GD_VERSION__</span></span>
     <span class="spacer"></span>
     <span><span class="led led-off" id="foot-led"></span><span id="foot-state" data-i18n="connecting">connecting</span></span>
   </div>

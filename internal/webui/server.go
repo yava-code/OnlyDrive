@@ -20,6 +20,7 @@ import (
 	"gd/internal/doctor"
 	"gd/internal/rclone"
 	"gd/internal/serve"
+	"gd/internal/version"
 )
 
 // DefaultPort is the port the UI listens on when --port is not given.
@@ -107,6 +108,13 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	return s.srv.Shutdown(ctx)
 }
 
+// indexHTMLBytes returns the dashboard HTML with the version placeholder
+// replaced by version.String(), so the footer always shows the release this
+// binary was built from and never drifts from internal/version.
+func indexHTMLBytes() []byte {
+	return []byte(strings.ReplaceAll(indexHTML, versionPlaceholder, version.String()))
+}
+
 // handleIndex serves the single-page dashboard. Registered as catch-all, so
 // wrong-method requests to API paths land here too: answer 405, not 404.
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
@@ -138,7 +146,7 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
-	_, _ = w.Write([]byte(indexHTML))
+	_, _ = w.Write(indexHTMLBytes())
 }
 
 // action wraps a mutating handler with auth and panic-safety.

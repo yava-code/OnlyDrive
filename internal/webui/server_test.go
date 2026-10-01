@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"gd/internal/config"
+	"gd/internal/version"
 )
 
 func testServer(t *testing.T, token string) *Server {
@@ -121,6 +122,31 @@ func TestIndexPageServed(t *testing.T) {
 		if !strings.Contains(page, want) {
 			t.Fatalf("index page missing %q", want)
 		}
+	}
+}
+
+// The index page must carry the binary's own version, so the panel footer can
+// never drift from internal/version.
+func TestIndexPageVersion(t *testing.T) {
+	s := testServer(t, "")
+	srv := httptest.NewServer(s.Handler())
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := `<span id="foot-ver">` + version.String() + `</span>`
+	if !strings.Contains(string(body), want) {
+		t.Fatalf("index page missing version span %q", want)
+	}
+	if strings.Contains(string(body), versionPlaceholder) {
+		t.Fatal("index page still contains the raw version placeholder")
 	}
 }
 

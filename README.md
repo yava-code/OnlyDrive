@@ -158,8 +158,10 @@ through WinFsp. The CI runs a live `rclone nfsmount` round-trip on macOS
 
 The release version lives in exactly one place: `internal/version`
 (`Number` constant). A release bumps that constant and tags the same
-`vX.Y.Z`; the landing page and panel footer repeat the string manually at
-release time.
+`vX.Y.Z`. Nothing else repeats the string: the panel footer is stamped from
+the constant when the page is served, and the landing page resolves the
+newest release tag from the GitHub API at view time (its static text says
+"latest" and needs no update).
 
 ## Updating
 
