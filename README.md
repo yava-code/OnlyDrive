@@ -265,7 +265,24 @@ simply required.
 - [x] `gd serve webdav`: mount the pool on macOS/Linux with stock WebDAV clients
 - [x] native mounting on macOS (`rclone nfsmount`, no macFUSE needed) and Linux (FUSE backend, no root): `gd mount` works on both, CI smoke round-trip on every push
 - [x] own Google client_id option (shared one retires in 2026)
-- [ ] one-liner releases via goreleaser (config in `.goreleaser.yaml`)
+- [x] one-liner releases: `scripts/release.sh vX.Y.Z`
+
+## Releasing
+
+One command, from a clean `main`:
+
+```bash
+scripts/release.sh v0.1.5
+```
+
+It refuses to run on a dirty or out-of-sync tree, refuses an existing or
+malformed tag, bumps the version constant (and fails on any stale version
+echoes left elsewhere), runs `go build/vet/test`, commits, tags, pushes,
+watches the CI run on the tag, verifies the published assets and the host
+binary's SHA-256, and patches the release notes if they are still the
+auto-generated changelog. `--dry-run` prints the plan and writes nothing.
+The tag equals `internal/version.Number`; goreleaser publishes from the tag
+in CI.
 
 ## Tests
 

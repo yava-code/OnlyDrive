@@ -1,6 +1,6 @@
 # gd installer (Windows), one line:
 #   irm https://raw.githubusercontent.com/yava-code/OnlyDrive/main/install/install.ps1 | iex
-# Env overrides: GD_REPO=user/repo  GD_VERSION=v0.1.4
+# Env overrides: GD_REPO=user/repo  GD_VERSION=vX.Y.Z (default: latest release)
 $ErrorActionPreference = 'Stop'
 
 $repo = if ($env:GD_REPO) { $env:GD_REPO } else { 'yava-code/OnlyDrive' }

@@ -25,7 +25,7 @@ const Repo = "yava-code/OnlyDrive"
 
 // Release is one GitHub release worth of information selfupdate needs.
 type Release struct {
-	Tag    string // "v0.1.4"
+	Tag    string // release tag: "v" + semver
 	Assets map[string]string
 }
 
