@@ -183,14 +183,20 @@ func EnsureMounted() ([]config.Mount, error) {
 			live = append(live, reg)
 			continue
 		}
-		letter, err := config.NextFreeLetter()
-		if err != nil {
-			continue
+		// Keep the original target on the first remount; after that pick a
+		// fresh one (a free letter on Windows, a fresh mountpoint elsewhere).
+		target := reg.Letter
+		if target == "" || !config.IsDriveLetter(target) {
+			t, err := config.MountTarget(reg.Account)
+			if err != nil {
+				continue
+			}
+			target = t
 		}
-		if err := m.MountRemote(context.Background(), reg.Remote, letter, reg.VolName); err != nil {
+		if err := m.MountRemote(context.Background(), reg.Remote, target, reg.VolName); err != nil {
 			continue // leave registered; user can `gd mount` manually
 		}
-		reg.Letter = letter
+		reg.Letter = target
 		live = append(live, reg)
 	}
 	if len(live) != len(cfg.Mounts) {

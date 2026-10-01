@@ -48,7 +48,9 @@ func Run(ctx context.Context, fix bool) ([]Check, error) {
 		checks = append(checks, Check{"rclone", false, "not installed (run: gd setup)"})
 	}
 
-	// winfsp (windows only)
+	// mount backend: WinFsp on Windows (registry check), a live nfsmount
+	// round-trip elsewhere (nfsmount ships inside the rclone binary, so the
+	// probe is the only real signal; on macOS it can fail only on permissions).
 	if runtime.GOOS == "windows" {
 		if winfsp.Installed() {
 			checks = append(checks, Check{"winfsp", true, winfsp.InstalledVersion()})
@@ -61,6 +63,12 @@ func Run(ctx context.Context, fix bool) ([]Check, error) {
 		} else {
 			checks = append(checks, Check{"winfsp", false, "not installed (needed for mounting; run: gd setup)"})
 		}
+	} else if m.MountProbe() {
+		checks = append(checks, Check{"mount", true, "rclone nfsmount round-trip passed"})
+	} else {
+		checks = append(checks, Check{"mount", false,
+			"nfsmount test mount failed; on macOS grant your terminal Full Disk Access" +
+				" (https://rclone.org/commands/rclone_nfsmount/)"})
 	}
 
 	// accounts

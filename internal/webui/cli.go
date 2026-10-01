@@ -76,17 +76,18 @@ func runMount(account string) error {
 		return err
 	}
 	m.SetAuth("gd", pass)
-	letter, err := config.NextFreeLetter()
+	// Windows gets a free drive letter; macOS/Linux mount under ~/.gd/mnt.
+	target, err := config.MountTarget(acc.Name)
 	if err != nil {
 		return err
 	}
-	if err := m.MountRemote(context.Background(), acc.Remote+":", letter, "GDrive-"+acc.Name); err != nil {
-		return fmt.Errorf("mount failed: %w (is WinFsp installed? run: gd doctor)", err)
+	if err := m.MountRemote(context.Background(), acc.Remote+":", target, "GDrive-"+acc.Name); err != nil {
+		return fmt.Errorf("mount failed: %w (is the mount backend installed? run: gd doctor)", err)
 	}
 	cfg.Mounts = append(cfg.Mounts, config.Mount{
 		Account: acc.Name,
 		Remote:  acc.Remote + ":",
-		Letter:  letter,
+		Letter:  target,
 		VolName: "GDrive-" + acc.Name,
 	})
 	return cfg.Save()
@@ -112,7 +113,19 @@ func runUnmount(account string) error {
 	}
 	m.SetAuth("gd", pass)
 	if err := m.UnmountRemote(context.Background(), target.Letter); err != nil {
-		return err
+		// A macOS/Linux mountpoint may have been removed from disk, which
+		// makes the daemon-side unmount fail; still forget the registration.
+		if config.IsDriveLetter(target.Letter) {
+			return err
+		}
+		kept := cfg.Mounts[:0]
+		for _, mm := range cfg.Mounts {
+			if mm.Letter != target.Letter {
+				kept = append(kept, mm)
+			}
+		}
+		cfg.Mounts = kept
+		return cfg.Save()
 	}
 	kept := cfg.Mounts[:0]
 	for _, mm := range cfg.Mounts {

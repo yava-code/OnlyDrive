@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"gd/internal/config"
 	"gd/internal/rclone"
 )
 
@@ -93,4 +94,29 @@ func TestLiveLocalMount(t *testing.T) {
 		t.Fatalf("read back: %v %q", err, got)
 	}
 	fmt.Println("nfsmount round-trip ok at", mp)
+
+	// Same round-trip through config.MountTarget, the target picker gd mount
+	// actually uses: per-account directory under GD_HOME/mnt, not a bare
+	// t.TempDir() path.
+	t.Setenv("GD_HOME", filepath.Join(dir, "gdhome"))
+	mp2, err := config.MountTarget("acc1")
+	if err != nil {
+		t.Fatalf("MountTarget: %v", err)
+	}
+	if want := filepath.Join(dir, "gdhome", "mnt", "acc1"); mp2 != want {
+		t.Fatalf("MountTarget = %q, want %q", mp2, want)
+	}
+	if err := sm.MountRemote(ctx, "smokelocal:"+src, mp2, "gd-smoke"); err != nil {
+		t.Fatalf("nfsmount via MountTarget: %v", err)
+	}
+	defer func() { _ = sm.UnmountRemote(context.Background(), mp2) }()
+	probe2 := filepath.Join(mp2, "probe.txt")
+	if err := os.WriteFile(probe2, []byte("onlydrive smoke 2"), 0o644); err != nil {
+		t.Fatalf("write through second mount: %v", err)
+	}
+	got2, err := os.ReadFile(probe2)
+	if err != nil || string(got2) != "onlydrive smoke 2" {
+		t.Fatalf("read back: %v %q", err, got2)
+	}
+	fmt.Println("nfsmount round-trip ok at", mp2)
 }

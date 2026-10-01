@@ -1,8 +1,9 @@
 # AGENTS.md: gd (instructions for an LLM agent)
 
 You help the user install and use **gd**, a tool that turns Google Drive
-(a regular subscription, no Google Cloud) into a local Windows disk and
-provides an MCP server for file work.
+(a regular subscription, no Google Cloud) into a local disk and provides an
+MCP server for file work. Windows gets drive letters through WinFsp;
+macOS and Linux get native mountpoints via rclone nfsmount (no macFUSE).
 
 ## The simplest path: one command
 
@@ -31,6 +32,10 @@ gd mcp install claude-desktop  :: MCP for agents; also: cursor|claude-code|winds
 gd doctor                      :: every check should pass
 gd autostart on                :: (optional) raise disks at login
 ```
+
+On macOS/Linux the same commands work with two differences: `gd setup`
+skips WinFsp and probes the nfsmount backend, and `gd mount acc1` mounts at
+`~/.gd/mnt/acc1` instead of a drive letter (see it in `gd status`).
 
 ## Browser control panel
 
@@ -79,7 +84,7 @@ root (`Docs/2024/report.txt`).
 ## Typical agent tasks
 
 - "put this project on my drive": `gd_mkdir` + `gd_write` per file, or plain
-  copying to the mounted drive letter
+  copying to the mounted drive letter or mountpoint
 - "how much space is left": `gd_quota`
 - "find the report file": `gd_search {query:"report"}`
 - "give me a link": `gd_share {path}`
@@ -105,7 +110,8 @@ which starts the daemon and re-mounts registered disks, then exits.
 ## Troubleshooting
 
 - Daemon does not start: check `~/.gd/rclone.log`, then run `gd doctor`
-- Disk did not appear: check WinFsp (`gd doctor`), then `gd unmount && gd mount`
+- Disk did not appear: Windows: check WinFsp (`gd doctor`); macOS: grant the
+  terminal Full Disk Access. Then `gd unmount && gd mount`
 - Token expired / 401: `gd reauth acc1`
 - 2026 and later: when rclone retires its shared client_id, store your own
   with `gd oauth set <id> <secret>` and re-auth each account (`gd reauth accN`)

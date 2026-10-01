@@ -299,20 +299,22 @@ func mountRemote(cfg *config.Config, remote, path, vol, account string) error {
 	}
 	m.SetAuth("gd", pass)
 
-	letter, err := config.NextFreeLetter()
+	// Windows gets a free drive letter; macOS/Linux mount at
+	// ~/.gd/mnt/<account> via rclone nfsmount (no macFUSE needed).
+	target, err := config.MountTarget(account)
 	if err != nil {
 		return err
 	}
-	if err := m.MountRemote(context.Background(), remote, letter, vol); err != nil {
-		return fmt.Errorf("mount failed: %w (is WinFsp installed? run: gd doctor)", err)
+	if err := m.MountRemote(context.Background(), remote, target, vol); err != nil {
+		return fmt.Errorf("mount failed: %w (is the mount backend installed? run: gd doctor)", err)
 	}
 	cfg.Mounts = append(cfg.Mounts, config.Mount{
-		Account: account, Remote: remote, Letter: letter, VolName: vol, SubPath: path,
+		Account: account, Remote: remote, Letter: target, VolName: vol, SubPath: path,
 	})
 	if err := cfg.Save(); err != nil {
 		return err
 	}
-	fmt.Printf("mounted %s -> %s [%s]\n", remote, letter, vol)
+	fmt.Printf("mounted %s -> %s [%s]\n", remote, target, vol)
 	return nil
 }
 
@@ -345,7 +347,23 @@ func cmdUnmount(rest []string) error {
 	}
 	m.SetAuth("gd", pass)
 	if err := m.UnmountRemote(context.Background(), target.Letter); err != nil {
-		return err
+		// A macOS/Linux mountpoint may have been removed from disk, which
+		// makes the daemon-side unmount fail; still forget the registration.
+		if config.IsDriveLetter(target.Letter) {
+			return err
+		}
+		kept := cfg.Mounts[:0]
+		for _, mm := range cfg.Mounts {
+			if mm.Letter != target.Letter {
+				kept = append(kept, mm)
+			}
+		}
+		cfg.Mounts = kept
+		if err := cfg.Save(); err != nil {
+			return err
+		}
+		fmt.Printf("unmounted %s (%s)\n", target.Letter, target.Account)
+		return nil
 	}
 	kept := cfg.Mounts[:0]
 	for _, mm := range cfg.Mounts {

@@ -31,8 +31,8 @@ Usage:
   gd accounts                  list added accounts
   gd remove <acc>              remove an account
   gd daemon start|stop|status  manage the background rclone service
-  gd mount [acc|union] [--path sub]  mount as a disk (auto letter)
-  gd unmount [acc]             unmount account's disk
+  gd mount [acc|union] [--path sub]  mount as a disk (letter on Windows, dir on macOS/Linux)
+  gd unmount [acc]             unmount an account's disk
   gd serve union               one storage pool over ALL accounts
   gd serve s3 [remote] [--port 9000]      S3-compatible API for your projects
   gd serve webdav [remote] [--port 9864]  WebDAV endpoint: mount the pool on macOS/Linux
@@ -325,7 +325,16 @@ func cmdSetup() error {
 			fmt.Println("      installed")
 		}
 	} else {
-		fmt.Println("[2/4] WinFsp: not needed on " + runtime.GOOS)
+		fmt.Print("[2/4] mount backend (rclone nfsmount): ")
+		m2, err := rclone.New()
+		if err != nil {
+			return err
+		}
+		if m2.MountProbe() {
+			fmt.Println("ok")
+		} else {
+			fmt.Println("FAILED (on macOS: grant your terminal Full Disk Access; see rclone.org/commands/rclone_nfsmount)")
+		}
 	}
 
 	// 3. state + daemon password

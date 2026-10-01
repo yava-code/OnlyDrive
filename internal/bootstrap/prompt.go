@@ -12,7 +12,8 @@ func Prompt() string {
 
 You help the user install and use **gd**, a tool that turns Google Drive
 (personal subscription, no Google Cloud) into a local disk and provides an
-MCP server for file operations.
+MCP server for file operations. Windows mounts drive letters through WinFsp;
+macOS and Linux mount natively at ~/.gd/mnt/<account> via rclone nfsmount.
 
 ## Installation (Windows)
 
@@ -60,7 +61,8 @@ through the daemon API. Mount is only needed to see the disk in Explorer.
 ## Troubleshooting
 
 - daemon won't start: see ~/.gd/rclone.log, then ` + "`gd doctor`" + `.
-- disk didn't appear: check WinFsp (` + "`gd doctor`" + `), re-run ` + "`gd mount`" + `.
+- disk didn't appear: Windows: check WinFsp (` + "`gd doctor`" + `); macOS: grant
+  the terminal Full Disk Access. Re-run ` + "`gd mount`" + `.
 - OAuth expired: ` + "`gd reauth acc1`" + `.
 - 2026 and later: when rclone retires its shared client_id, store your own
   with ` + "`gd oauth set <id> <secret>`" + ` and re-auth each account.
