@@ -42,10 +42,11 @@ jobs:
         run: |
           if [ "$RUNNER_OS" = macOS ]; then brew install rclone; else sudo apt-get update -qq && sudo apt-get install -y rclone; fi
           rclone version
+          echo "GD_RCLONE=$(command -v rclone)" >> "$GITHUB_ENV"
       - name: Live mount smoke (local fs remote)
         env:
           GD_LIVE_SMOKE: '1'
-          GD_RCLONE: /usr/local/bin/rclone
+          GD_REQUIRE_SMOKE: '1'
         run: go test ./internal/serve/ -run TestLiveLocalMount -v
 
   release:

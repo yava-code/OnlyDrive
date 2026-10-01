@@ -34,6 +34,9 @@ func TestLiveLocalMount(t *testing.T) {
 		t.Fatalf("rclone: %v", err)
 	}
 	if !m.Installed() {
+		if os.Getenv("GD_REQUIRE_SMOKE") == "1" {
+			t.Fatalf("smoke required but rclone not found at %q (GD_RCLONE); fix the CI path", m.BinPath)
+		}
 		t.Skip("rclone not found; CI installs it (brew / apt) and sets GD_RCLONE")
 	}
 
