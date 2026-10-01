@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # gd installer (macOS / Linux), one line:
 #   curl -fsSL https://raw.githubusercontent.com/yava-code/OnlyDrive/main/install/macos.sh | bash
-# Env overrides: GD_REPO=user/repo  GD_VERSION=v0.1.2
+# Env overrides: GD_REPO=user/repo  GD_VERSION=v0.1.3
 set -euo pipefail
 
 REPO="${GD_REPO:-yava-code/OnlyDrive}"

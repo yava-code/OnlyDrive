@@ -4,7 +4,7 @@
 package version
 
 // Number is the current gd release, without the leading "v".
-const Number = "0.1.2"
+const Number = "0.1.3"
 
 // String returns the version with the conventional leading "v".
 func String() string { return "v" + Number }

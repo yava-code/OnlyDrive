@@ -352,7 +352,7 @@ const indexHTML = `<!doctype html>
 
 <footer>
   <div class="bar">
-    <span>OnlyDrive <span id="foot-ver">v0.1.2</span></span>
+    <span>OnlyDrive <span id="foot-ver">v0.1.3</span></span>
     <span class="spacer"></span>
     <span><span class="led led-off" id="foot-led"></span><span id="foot-state" data-i18n="connecting">connecting</span></span>
   </div>
