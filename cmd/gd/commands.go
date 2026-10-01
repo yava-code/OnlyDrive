@@ -159,8 +159,12 @@ func cmdRemove(rest []string) error {
 }
 
 func cmdReauth(rest []string) error {
+	// gd reauth --all: one browser session per account, reported as it goes.
+	if len(rest) == 1 && (rest[0] == "--all" || rest[0] == "all") {
+		return reauthAll()
+	}
 	if len(rest) < 1 {
-		return fmt.Errorf("usage: gd reauth <acc>")
+		return fmt.Errorf("usage: gd reauth <acc> | --all")
 	}
 	cfg, err := config.Load()
 	if err != nil {
@@ -194,6 +198,29 @@ func cmdReauth(rest []string) error {
 		}
 	}
 	fmt.Println("re-authorized", acc.Email)
+	return nil
+}
+
+// reauthAll re-authorizes every account through the OAuth client currently
+// in effect (env, stored pair, or rclone's built-in). Used by `gd reauth --all`
+// and by `gd oauth setup` right after storing a new pair.
+func reauthAll() error {
+	cfg, err := config.Load()
+	if err != nil {
+		return err
+	}
+	if len(cfg.Accounts) == 0 {
+		fmt.Println("no accounts to re-authorize")
+		return nil
+	}
+	for i, acc := range cfg.Accounts {
+		fmt.Printf("[%d/%d] %s (%s)\n", i+1, len(cfg.Accounts), acc.Name, acc.Email)
+		if err := cmdReauth([]string{acc.Name}); err != nil {
+			fmt.Println("  failed:", err)
+			continue
+		}
+	}
+	fmt.Println("done; verify with: gd oauth show && gd doctor")
 	return nil
 }
 

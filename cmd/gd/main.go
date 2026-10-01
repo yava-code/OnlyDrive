@@ -41,9 +41,10 @@ Usage:
   gd status                    daemon + mounts overview
   gd quota [acc]               storage usage for an account
   gd share <path> [acc]        create a public link for a file
-  gd reauth <acc>              refresh OAuth for an account
-  gd oauth set <id> <secret>   store your own Google OAuth client (the shared
-                               rclone one retires during 2026)
+  gd reauth <acc>|--all        refresh OAuth for an account (or all of them)
+  gd oauth setup               walkthrough: create your own Google OAuth client, store it,
+                               re-authorize every account (the shared rclone client retires 2026)
+  gd oauth set <id> <secret>   store the pair without the walkthrough
   gd oauth show|clear          inspect/remove the stored client
   gd mcp                       run MCP server (stdio), for AI agents
   gd mcp install <client>      register MCP in claude-desktop|claude-code|cursor|windsurf|vscode
@@ -196,10 +197,18 @@ func cmdWizard() error {
 		// client_id retires during 2026. Enter = skip, y = collect the pair
 		// now so the very first `add` already runs with it.
 		if askYN("      Use your own Google client_id? (recommended)", false) {
-			oid := ask("      client_id", "")
-			osec := ask("      client_secret", "")
-			if err := saveOAuthPair(oid, osec); err != nil {
-				return err
+			if askYN("      Run the guided walkthrough (gd oauth setup)?", true) {
+				if err := oauthSetup(nil); err != nil {
+					fmt.Println("      walkthrough stopped:", err)
+				}
+			}
+			// Manual entry only if the walkthrough did not store a pair.
+			if c, e := config.Load(); e == nil && (c.OAuthApp == nil || c.OAuthApp.ClientID == "") {
+				oid := ask("      client_id", "")
+				osec := ask("      client_secret", "")
+				if err := saveOAuthPair(oid, osec); err != nil {
+					return err
+				}
 			}
 		}
 		nStr := ask("      How many Google accounts to connect?", "1")

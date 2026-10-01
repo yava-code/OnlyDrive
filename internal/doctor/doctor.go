@@ -93,8 +93,8 @@ func Run(ctx context.Context, fix bool) ([]Check, error) {
 			checks = append(checks, Check{"oauth", true, "own Google client_id in use (" + source + ")"})
 		} else {
 			checks = append(checks, Check{"oauth", false,
-				"shared rclone client_id stops working during 2026; run: gd oauth set <id> <secret>" +
-					" (https://rclone.org/drive/#making-your-own-client-id)"})
+				"shared rclone client_id stops working during 2026; run: gd oauth setup (walkthrough)" +
+					" or gd oauth set <id> <secret> (https://rclone.org/drive/#making-your-own-client-id)"})
 		}
 	}
 

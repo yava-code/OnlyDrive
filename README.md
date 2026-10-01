@@ -97,8 +97,9 @@ header.
 | `gd add` | add a Google account (browser, Allow) |
 | `gd accounts` | list accounts |
 | `gd remove <acc>` | remove an account |
-| `gd reauth <acc>` | re-authorize an account |
-| `gd oauth set\|show\|clear` | store/inspect/remove your own Google OAuth client (see below) |
+| `gd reauth <acc>\|--all` | re-authorize one account or all of them |
+| `gd oauth setup` | guided walkthrough: create your own Google OAuth client, store it, re-authorize everything (see below) |
+| `gd oauth set\|show\|clear` | store/inspect/remove the pair without the walkthrough |
 | `gd daemon start\|stop\|status` | manage the background daemon |
 | `gd mount [acc\|union] [--path <sub>]` | mount as a disk (drive letter on Windows, `~/.gd/mnt/<account>` on macOS/Linux; Linux needs fuse3/kio-fuse) |
 | `gd unmount [acc]` | unmount |
@@ -200,36 +201,42 @@ lets you disable an entry without deleting it.
 rclone ships a shared, public Google Drive OAuth client, and rclone is
 retiring it during 2026. Until you store your own client, authorizing new
 accounts and refreshing tokens keeps working, but it will stop one day, so
-plan ahead. It is a one-time, five-minute chore:
+plan ahead. It is a one-time, five-minute chore per human, not per account:
 
-1. Open <https://console.cloud.google.com>, create (or reuse) a project.
-2. Enable the **Google Drive API** for it.
-3. Configure the **OAuth consent screen** (External is fine, add yourself as
-   a test user; no sensitive scopes needed, rclone uses plain `drive`).
-4. Create credentials of type **OAuth client ID**, application type
-   **Desktop app**, and copy the client_id and client_secret.
-5. Store them:
+```bat
+gd oauth setup
+```
+
+opens the exact Google Cloud Console pages in order (project, Drive API,
+consent screen, credentials), stores the client_id/client_secret pair and
+re-authorizes every existing account automatically; each account is one
+browser Allow click. Prefer doing it by hand? Create an OAuth client of type
+**Desktop app** yourself and run:
 
 ```bat
 gd oauth set <client_id> <client_secret>
+gd reauth --all
 ```
 
-6. Re-authorize every existing account (a refresh token is bound to the
-   client_id that minted it, so old tokens cannot renew through your new
-   client):
+A refresh token is bound to the client_id that minted it, so existing
+accounts must re-authorize once through the new client. `gd oauth show`
+reports which client is in effect (with the secret masked), `gd oauth clear`
+forgets the stored pair. In scripts and CI you can skip the storage
+entirely: `GD_CLIENT_ID` and `GD_CLIENT_SECRET` environment variables take
+priority over the stored pair.
 
-```bat
-gd reauth acc1
-gd reauth acc2
-```
+One Console pitfall: after configuring the consent screen, press
+**Publish app**. Without publishing, the app stays in Testing mode, where
+Google expires refresh tokens after 7 days and caps you at 100 users.
+Publishing to Production without Google verification is fine for personal
+use: first-time authorizations show an "unverified app" warning that each
+account bypasses once with "Advanced -> Go to app", and the tokens then
+never expire.
 
-`gd oauth show` reports which client is in effect (with the secret masked),
-`gd oauth clear` forgets the stored pair. In scripts and CI you can skip the
-storage entirely: `GD_CLIENT_ID` and `GD_CLIENT_SECRET` environment variables
-take priority over the stored pair. With 10+ accounts or heavy automated
-uploads Google officially recommends your own client_id anyway (rclone
-documents it at <https://rclone.org/drive/#making-your-own-client-id>), and
-after 2026 it is simply required.
+With 10+ accounts or heavy automated uploads Google officially recommends
+your own client_id anyway (rclone documents it at
+<https://rclone.org/drive/#making-your-own-client-id>), and after 2026 it is
+simply required.
 
 ## Limitations (important)
 

@@ -26,7 +26,8 @@ FUSE on Linux).
 ` + "```" + `bat
 gd setup          :: downloads rclone, installs WinFsp (one UAC prompt), checks the environment
 gd add            :: connects a Google account via the browser (OAuth, no API keys)
-gd oauth set      :: store your own Google OAuth client (rclone's shared one retires in 2026)
+gd oauth setup    :: walkthrough: store your own Google OAuth client and re-auth all
+                  :: accounts (rclone's shared one retires in 2026)
 gd daemon start   :: starts the background service
 gd mount acc1     :: mounts the account as a disk (letter picked automatically)
 gd mcp install claude-desktop   :: or cursor / claude-code / windsurf / vscode
@@ -65,8 +66,8 @@ through the daemon API. Mount is only needed to see the disk in Explorer.
 - disk didn't appear: Windows: check WinFsp (` + "`gd doctor`" + `); macOS: grant
   the terminal Full Disk Access. Re-run ` + "`gd mount`" + `.
 - OAuth expired: ` + "`gd reauth acc1`" + `.
-- 2026 and later: when rclone retires its shared client_id, store your own
-  with ` + "`gd oauth set <id> <secret>`" + ` and re-auth each account.
+- 2026 and later: when rclone retires its shared client_id, run ` + "`gd oauth setup`" + `
+  (walkthrough, re-authorizes every account) or store a pair with ` + "`gd oauth set`" + `.
 `)
 	return b.String()
 }
