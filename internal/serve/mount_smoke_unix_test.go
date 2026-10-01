@@ -1,4 +1,4 @@
-//go:build darwin
+//go:build !windows
 
 package serve
 
@@ -17,21 +17,24 @@ import (
 	"gd/internal/rclone"
 )
 
-// TestLiveLocalMount is the macOS round-trip the roadmap item promised: an
-// rclone rcd with a throwaway config, a local-fs remote, and that remote
-// mounted through rclone nfsmount (no macFUSE), with one file written and
-// read back through the mount. It needs no Google accounts: CI runs it on
-// every push, and GD_LIVE_SMOKE=1 gates local runs.
+// TestLiveLocalMount is the Unix round-trip behind "native mounts": an
+// rclone rcd with a throwaway config and a local-fs remote, mounted through
+// the daemon's mount/mount (nfsmount on macOS, FUSE on Linux) into the exact
+// per-account path gd mount uses (config.MountTarget), with one file written
+// and read back through the mount. It needs no Google accounts: CI runs it on
+// macOS and Linux runners on every push, and GD_LIVE_SMOKE=1 gates local runs.
 func TestLiveLocalMount(t *testing.T) {
 	if os.Getenv("GD_LIVE_SMOKE") != "1" {
 		t.Skip("set GD_LIVE_SMOKE=1 to run the live nfsmount round-trip")
 	}
+	// The smoke runs the system rclone (brew on macOS, apt on Linux); GD_RCLONE
+	// points the Manager at it instead of the managed ~/.gd/bin copy.
 	m, err := rclone.New()
 	if err != nil {
 		t.Fatalf("rclone: %v", err)
 	}
 	if !m.Installed() {
-		t.Skip("rclone not installed; CI installs it with brew")
+		t.Skip("rclone not found; CI installs it (brew / apt) and sets GD_RCLONE")
 	}
 
 	// Throwaway config with one local-fs remote named smokelocal.
@@ -63,10 +66,7 @@ func TestLiveLocalMount(t *testing.T) {
 	}
 	defer func() { _ = rcd.Process.Kill() }()
 
-	sm, err := rclone.New()
-	if err != nil {
-		t.Fatalf("rclone: %v", err)
-	}
+	sm := rclone.NewRaw(m.BinPath, "http://127.0.0.1:"+strconv.Itoa(port))
 	sm.SetAuth("smoke", pass)
 	deadline := time.Now().Add(20 * time.Second)
 	for !sm.RCAlive() {
@@ -81,7 +81,7 @@ func TestLiveLocalMount(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 	if err := sm.MountRemote(ctx, "smokelocal:"+src, mp, "gd-smoke"); err != nil {
-		t.Fatalf("nfsmount: %v", err)
+		t.Fatalf("mount: %v", err)
 	}
 	defer func() { _ = sm.UnmountRemote(context.Background(), mp) }()
 
@@ -93,11 +93,10 @@ func TestLiveLocalMount(t *testing.T) {
 	if err != nil || string(got) != "onlydrive smoke" {
 		t.Fatalf("read back: %v %q", err, got)
 	}
-	fmt.Println("nfsmount round-trip ok at", mp)
+	fmt.Println("mount round-trip ok at", mp)
 
 	// Same round-trip through config.MountTarget, the target picker gd mount
-	// actually uses: per-account directory under GD_HOME/mnt, not a bare
-	// t.TempDir() path.
+	// actually uses: per-account directory under GD_HOME/mnt.
 	t.Setenv("GD_HOME", filepath.Join(dir, "gdhome"))
 	mp2, err := config.MountTarget("acc1")
 	if err != nil {
@@ -107,7 +106,7 @@ func TestLiveLocalMount(t *testing.T) {
 		t.Fatalf("MountTarget = %q, want %q", mp2, want)
 	}
 	if err := sm.MountRemote(ctx, "smokelocal:"+src, mp2, "gd-smoke"); err != nil {
-		t.Fatalf("nfsmount via MountTarget: %v", err)
+		t.Fatalf("mount via MountTarget: %v", err)
 	}
 	defer func() { _ = sm.UnmountRemote(context.Background(), mp2) }()
 	probe2 := filepath.Join(mp2, "probe.txt")
@@ -118,5 +117,5 @@ func TestLiveLocalMount(t *testing.T) {
 	if err != nil || string(got2) != "onlydrive smoke 2" {
 		t.Fatalf("read back: %v %q", err, got2)
 	}
-	fmt.Println("nfsmount round-trip ok at", mp2)
+	fmt.Println("mount round-trip ok at", mp2)
 }

@@ -325,7 +325,7 @@ func cmdSetup() error {
 			fmt.Println("      installed")
 		}
 	} else {
-		fmt.Print("[2/4] mount backend (rclone nfsmount): ")
+		fmt.Print("[2/4] mount backend (nfsmount on macOS, FUSE on Linux): ")
 		m2, err := rclone.New()
 		if err != nil {
 			return err
@@ -333,7 +333,7 @@ func cmdSetup() error {
 		if m2.MountProbe() {
 			fmt.Println("ok")
 		} else {
-			fmt.Println("FAILED (on macOS: grant your terminal Full Disk Access; see rclone.org/commands/rclone_nfsmount)")
+			fmt.Println("FAILED (macOS: grant your terminal Full Disk Access; Linux: install fuse3 and check /dev/fuse)")
 		}
 	}
 

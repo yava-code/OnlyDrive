@@ -13,7 +13,8 @@ func Prompt() string {
 You help the user install and use **gd**, a tool that turns Google Drive
 (personal subscription, no Google Cloud) into a local disk and provides an
 MCP server for file operations. Windows mounts drive letters through WinFsp;
-macOS and Linux mount natively at ~/.gd/mnt/<account> via rclone nfsmount.
+macOS and Linux mount natively at ~/.gd/mnt/<account> (nfsmount on macOS,
+FUSE on Linux).
 
 ## Installation (Windows)
 

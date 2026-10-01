@@ -34,8 +34,11 @@ gd autostart on                :: (optional) raise disks at login
 ```
 
 On macOS/Linux the same commands work with two differences: `gd setup`
-skips WinFsp and probes the nfsmount backend, and `gd mount acc1` mounts at
-`~/.gd/mnt/acc1` instead of a drive letter (see it in `gd status`).
+skips WinFsp and probes the mount backend (nfsmount on macOS, FUSE on Linux:
+`/dev/fuse` + fusermount3, distro packages fuse3 or kio-fuse), and
+`gd mount acc1` mounts at `~/.gd/mnt/acc1` instead of a drive letter (see it
+in `gd status`). Autostart uses a LaunchAgent on macOS and an XDG autostart
+entry on Linux.
 
 ## Browser control panel
 
@@ -111,7 +114,8 @@ which starts the daemon and re-mounts registered disks, then exits.
 
 - Daemon does not start: check `~/.gd/rclone.log`, then run `gd doctor`
 - Disk did not appear: Windows: check WinFsp (`gd doctor`); macOS: grant the
-  terminal Full Disk Access. Then `gd unmount && gd mount`
+  terminal Full Disk Access; Linux: install fuse3 and check /dev/fuse. Then
+  `gd unmount && gd mount`
 - Token expired / 401: `gd reauth acc1`
 - 2026 and later: when rclone retires its shared client_id, store your own
   with `gd oauth set <id> <secret>` and re-auth each account (`gd reauth accN`)

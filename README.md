@@ -7,7 +7,7 @@ OnlyDrive is a single exe (the command is `gd`) that turns Google Drive (a
 regular Google One or Workspace subscription, **no Google Cloud and no API
 keys**) into:
 
-1. **A local disk**: on Windows, Drive folders show up in Explorer as `GDrive-acc1 (X:)`; on macOS and Linux, `gd mount acc1` mounts the account natively at `~/.gd/mnt/acc1` via rclone nfsmount (no macFUSE needed)
+1. **A local disk**: on Windows, Drive folders show up in Explorer as `GDrive-acc1 (X:)`; on macOS and Linux, `gd mount acc1` mounts the account natively at `~/.gd/mnt/acc1` (rclone nfsmount on macOS, no macFUSE needed; the FUSE backend on Linux, where nfsmount would need root)
 2. **An MCP server**: Claude Desktop, Cursor, Claude Code, Windsurf and VS Code work with the disk through the `gd_*` tools
 3. **An S3-compatible API and a WebDAV endpoint**: `gd serve s3` for your projects, `gd serve webdav` to mount the pool on macOS and Linux without any FSD driver
 
@@ -100,7 +100,7 @@ header.
 | `gd reauth <acc>` | re-authorize an account |
 | `gd oauth set\|show\|clear` | store/inspect/remove your own Google OAuth client (see below) |
 | `gd daemon start\|stop\|status` | manage the background daemon |
-| `gd mount [acc\|union] [--path <sub>]` | mount as a disk (drive letter on Windows, `~/.gd/mnt/<account>` on macOS/Linux) |
+| `gd mount [acc\|union] [--path <sub>]` | mount as a disk (drive letter on Windows, `~/.gd/mnt/<account>` on macOS/Linux; Linux needs fuse3/kio-fuse) |
 | `gd unmount [acc]` | unmount |
 | `gd serve union` | union remote over ALL accounts (one pool) |
 | `gd serve s3 [remote] [--port N]` | S3-compatible API (see below) |
@@ -152,9 +152,9 @@ sudo mount -t davfs http://127.0.0.1:9864/ /mnt/pool
 
 Windows does not need this path: `gd mount` gives real drive letters
 through WinFsp. On macOS and Linux, `gd mount acc1` uses the native path
-directly (`rclone nfsmount`, the same backend WebDAV avoids); WebDAV remains
-the way to mount the whole union pool as one directory. The CI runs a live
-`rclone nfsmount` round-trip on macOS on every push.
+directly; WebDAV remains the way to mount the whole union pool as one
+directory. The CI runs a live mount round-trip on macOS and Linux on every
+push (macOS runners have Full Disk Access; Linux runners have /dev/fuse).
 
 ## Versioning
 
@@ -256,7 +256,7 @@ after 2026 it is simply required.
 - [x] browser control panel (`gd ui`, `gd-ui.exe`)
 - [x] tray icon with Pause disks / Resume / Quit (Windows)
 - [x] `gd serve webdav`: mount the pool on macOS/Linux with stock WebDAV clients
-- [x] native macOS mounting (`rclone nfsmount`, no macFUSE needed): `gd mount` works on macOS, CI smoke round-trip on every push
+- [x] native mounting on macOS (`rclone nfsmount`, no macFUSE needed) and Linux (FUSE backend, no root): `gd mount` works on both, CI smoke round-trip on every push
 - [x] own Google client_id option (shared one retires in 2026)
 - [ ] one-liner releases via goreleaser (config in `.goreleaser.yaml`)
 

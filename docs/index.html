@@ -313,7 +313,7 @@
         <div class="card wide">
           <span class="tagline">Local disks</span>
           <h3>Windows drives straight from Google.</h3>
-          <p>Each account mounts through WinFsp as a lettered drive. Files open in Explorer, copy with drag and drop, and survive reboots: autostart re-mounts everything at login, falling back from schtasks to the per-user Run key when schtasks refuses.</p>
+          <p>Each account mounts as a lettered drive on Windows (WinFsp) or a native mountpoint on macOS and Linux (rclone nfsmount and FUSE). Files open in the file manager, copy with drag and drop, and survive reboots: autostart re-mounts everything at login.</p>
         </div>
         <div class="card">
           <span class="tagline">Storage pool</span>

@@ -8,8 +8,13 @@ import (
 )
 
 // DefaultMountRoot is the directory where per-account mountpoints live on
-// macOS and Linux (rclone nfsmount takes a path, not a drive letter).
+// macOS and Linux (the mount backends take a path, not a drive letter).
+// GD_HOME overrides the root so tests and portable installs keep mounts
+// inside their sandbox; the default is ~/.gd/mnt.
 func DefaultMountRoot() string {
+	if base := os.Getenv("GD_HOME"); base != "" {
+		return filepath.Join(base, "mnt")
+	}
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return filepath.Join(os.TempDir(), AppName, "mnt")

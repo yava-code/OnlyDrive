@@ -48,9 +48,10 @@ func Run(ctx context.Context, fix bool) ([]Check, error) {
 		checks = append(checks, Check{"rclone", false, "not installed (run: gd setup)"})
 	}
 
-	// mount backend: WinFsp on Windows (registry check), a live nfsmount
-	// round-trip elsewhere (nfsmount ships inside the rclone binary, so the
-	// probe is the only real signal; on macOS it can fail only on permissions).
+	// mount backend: WinFsp on Windows (registry check), a live mount
+	// round-trip elsewhere. On macOS the backend is nfsmount (ships inside
+	// rclone, no macFUSE); on Linux it is FUSE (/dev/fuse + fusermount3,
+	// distro packages fuse3 or kio-fuse), which the probe checks directly.
 	if runtime.GOOS == "windows" {
 		if winfsp.Installed() {
 			checks = append(checks, Check{"winfsp", true, winfsp.InstalledVersion()})
@@ -64,11 +65,13 @@ func Run(ctx context.Context, fix bool) ([]Check, error) {
 			checks = append(checks, Check{"winfsp", false, "not installed (needed for mounting; run: gd setup)"})
 		}
 	} else if m.MountProbe() {
-		checks = append(checks, Check{"mount", true, "rclone nfsmount round-trip passed"})
+		checks = append(checks, Check{"mount", true, "mount round-trip passed (nfsmount on macOS, FUSE on Linux)"})
 	} else {
-		checks = append(checks, Check{"mount", false,
-			"nfsmount test mount failed; on macOS grant your terminal Full Disk Access" +
-				" (https://rclone.org/commands/rclone_nfsmount/)"})
+		detail := "test mount failed; on macOS grant your terminal Full Disk Access"
+		if runtime.GOOS == "linux" {
+			detail = "test mount failed; install a FUSE backend (fuse3, kio-fuse) and check /dev/fuse"
+		}
+		checks = append(checks, Check{"mount", false, detail})
 	}
 
 	// accounts

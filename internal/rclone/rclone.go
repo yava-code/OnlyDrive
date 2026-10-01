@@ -37,6 +37,8 @@ type Manager struct {
 }
 
 // New creates a Manager; it resolves the rclone binary but does not download.
+// GD_RCLONE overrides the binary path (CI and smoke tests point it at the
+// system rclone instead of downloading the managed one).
 func New() (*Manager, error) {
 	_, _, _, binDir, err := config.Paths()
 	if err != nil {
@@ -46,12 +48,26 @@ func New() (*Manager, error) {
 	if runtime.GOOS == "windows" {
 		name = "rclone.exe"
 	}
+	bin := filepath.Join(binDir, name)
+	if p := os.Getenv("GD_RCLONE"); p != "" {
+		bin = p
+	}
 	m := &Manager{
-		BinPath: filepath.Join(binDir, name),
+		BinPath: bin,
 		rcURL:   fmt.Sprintf("http://127.0.0.1:%d", config.RcloneRCPort),
 		http:    &http.Client{Timeout: 120 * time.Second},
 	}
 	return m, nil
+}
+
+// NewRaw returns a Manager bound to an explicit binary path and RC URL;
+// used by probes and tests that run a throwaway daemon on a random port.
+func NewRaw(binPath, rcURL string) *Manager {
+	return &Manager{
+		BinPath: binPath,
+		rcURL:   rcURL,
+		http:    &http.Client{Timeout: 120 * time.Second},
+	}
 }
 
 // SetAuth sets RC API credentials (from the stored daemon password).
